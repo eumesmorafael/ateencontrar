@@ -1,0 +1,6 @@
+{
+  "appId": "com.eumesmorafael.ateteencontrar",
+  "appName": "Até te encontrar",
+  "webDir": "www",
+  "server": { "androidScheme": "https" }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "ate-te-encontrar",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Jogo de plataforma romântico (PWA) com opção de empacotar em app Android via Capacitor.",
+  "scripts": {
+    "build": "node scripts/build-www.mjs",
+    "test": "node scripts/build-www.mjs && python tests/test_jogo.py",
+    "cap:add:android": "npm run build && npx cap add android",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:open:android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  }
+}
