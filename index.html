@@ -19,6 +19,7 @@ body.touch[data-est=jogo]:not([data-pausa]) #ctl{display:block}
 .b.on{background:rgba(255,92,143,.95)}
 #bL{left:max(14px,env(safe-area-inset-left))}#bR{left:calc(max(14px,env(safe-area-inset-left)) + var(--s) + 12px)}
 #bJ{right:max(14px,env(safe-area-inset-right))}#bA{right:calc(max(14px,env(safe-area-inset-right)) + var(--s) + 12px);background:rgba(160,100,190,.78)}#bA[hidden]{display:none}
+#bD{right:max(14px,env(safe-area-inset-right));bottom:calc(max(22px,env(safe-area-inset-bottom)) + var(--s) + 12px);background:rgba(255,170,70,.8)}
 .ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(40,20,60,.72);z-index:6;padding:12px;box-sizing:border-box;overflow:auto}
 .ov.vis{display:flex}#menu{background:rgba(40,20,60,.45)}
 .card{background:linear-gradient(#fff6fa,#ffd9e8);color:#3b2350;border-radius:22px;padding:20px 22px;width:min(340px,100%);max-height:100%;overflow:auto;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4)}
@@ -30,7 +31,7 @@ body.touch[data-est=jogo]:not([data-pausa]) #ctl{display:block}
 </style></head><body data-est="menu">
 <div id="stage"><canvas id="c" width="640" height="360" aria-label="Jogo Até te encontrar"></canvas>
 <button class="ic" id="pause" aria-label="Pausar">Ⅱ</button><button class="ic" id="som" aria-label="Ligar ou desligar o som">🔊</button></div>
-<div id="ctl"><button class="b" id="bL" aria-label="Mover para a esquerda">◀</button><button class="b" id="bR" aria-label="Mover para a direita">▶</button><button class="b" id="bJ" aria-label="Pular">▲</button><button class="b" id="bA" aria-label="Atacar com espada" hidden>⚔️</button></div>
+<div id="ctl"><button class="b" id="bL" aria-label="Mover para a esquerda">◀</button><button class="b" id="bR" aria-label="Mover para a direita">▶</button><button class="b" id="bJ" aria-label="Pular">▲</button><button class="b" id="bD" aria-label="Impulso">⚡</button><button class="b" id="bA" aria-label="Atacar com espada" hidden>⚔️</button></div>
 <div class="ov vis" id="menu"><div class="card"><h1>Até te encontrar</h1><p id="sub"></p><p id="rec"></p><div class="bts">
 <button class="mb pri" id="mCont">Continuar</button><button class="mb" id="mComecar">Começar jogo</button><button class="mb" id="mNovo">Novo jogo</button><button class="mb" id="mSom">🔊 Som: ligado</button><button class="mb peq" id="mApagar">Apagar progresso</button></div></div></div>
 <div class="ov" id="pausa"><div class="card"><h2>Jogo pausado</h2><div class="bts"><button class="mb pri" id="pCont">Continuar</button><button class="mb" id="pReiniciar">Reiniciar fase</button><button class="mb" id="pMenu">Voltar ao menu</button></div></div></div>
@@ -40,7 +41,7 @@ body.touch[data-est=jogo]:not([data-pausa]) #ctl{display:block}
 // ===== EDITE AQUI =====
 const NOME = "Amor";
 const DATA_ENCONTRO = new Date(2026, 11, 23); // ano, mês (0-11), dia
-const TEXTO_FINAL = "Agora sim! Vem cá, tô te esperando. Feliz Natal! 💕";
+const TEXTO_FINAL = "Te achei! Agora ninguém separa a gente. Feliz Natal, meu amor! 💕";
 // cada coração: C("mensagem") ou {msg:"...", foto:"fotos/1.jpg", audio:"audios/1.mp3"}
 const C = msg => ({ msg, foto: "", audio: "" });
 // w: largura da fase | p: blocos [x, altura, largura] | pos: corações [x, altura]
@@ -48,17 +49,17 @@ const FASES = [
   { nome: "Nossa cidade", topo: "#ffd3e6", base: "#b9a4f5", chao: "#5b3a70", deco: "", w: 1800, grama: "#8a5fa0", luz: "#fff7b0", mov: -1, astro: [540, 70, 30, "#fff3c4"], c1: [.15, "rgba(150,120,200,.55)", "predio", 130, 60], c2: [.4, "rgba(91,58,112,.75)", "predio", 90, 46],
     p: [[300, 50, 90], [420, 100, 90], [640, 60, 120], [900, 70, 80], [1010, 130, 90], [1300, 50, 70], [1400, 100, 80], [1530, 150, 90]],
     pos: [[180, 32], [465, 130], [700, 90], [1055, 160], [1240, 32], [1450, 130], [1575, 180], [1710, 32]],
-    cor: [C("Pensei em você agora."), C("Queria você aqui comigo."), C("Seu sorriso faz falta."), C("Tô contando os dias."), C("Você mora nos meus pensamentos."), C("Guardei um abraço pra você."), C("Cada passo vale a pena."), C("Estou chegando.")],
+    cor: [C("Oi, você! Já tô sorrindo aqui."), C("Essa rua ficou sem graça sem você."), C("Seu sorriso é meu lugar favorito."), C("Cada dia a menos é um abraço a mais."), C("Você mora nos meus pensamentos, sem pagar aluguel."), C("Guardei um abraço bem apertado pra você."), C("Andaria qualquer caminho pra chegar em você."), C("Segura aí, amor, eu tô chegando!")],
     mobs: [[560, 1.1, 430, 780], [1180, 1.35, 960, 1390], [1640, 1.5, 1500, 1770]] },
   { nome: "Atravessando o mar", topo: "#c9f0ff", base: "#8fb8ff", chao: "#3f6f9e", deco: "", w: 2100, grama: "#6fa3d4", luz: "#ffffff", mov: -1, astro: [540, 60, 32, "#fffbe0"], c1: [.15, "rgba(120,160,230,.6)", "colina", 70, 200], c2: [.5, "rgba(255,255,255,.28)", "onda", 16, 0],
     p: [[200, 40, 80], [380, 70, 80], [560, 100, 80], [760, 60, 100], [1000, 90, 90], [1130, 140, 90], [1400, 50, 120], [1600, 100, 80], [1740, 150, 80], [1880, 100, 80]],
     pos: [[240, 70], [600, 130], [810, 90], [1175, 170], [1350, 32], [1580, 130], [1780, 180], [1960, 130]],
-    cor: [C("Até o mar não parece tão longe."), C("Saudade de ficar do seu lado."), C("Já tô imaginando nosso encontro."), C("Queria te ver hoje."), C("Você me dá coragem."), C("Falta pouco pra gente se abraçar."), C("A distância vai perder."), C("Mais um passo.")],
+    cor: [C("Nem o mar segura a minha saudade."), C("Queria tanto estar do seu lado agora."), C("Já ensaiei mil vezes nosso primeiro abraço."), C("Você é a minha parte preferida do dia."), C("Com você eu tenho coragem de sobra."), C("Só mais um pouco e a gente se abraça."), C("A distância não sabe com quem se meteu."), C("Já dá pra sentir seu cheirinho daqui.")],
     mobs: [[470, 1.2, 350, 650], [920, 1.5, 760, 1080], [1460, 1.35, 1330, 1660], [1900, 1.6, 1750, 2040]] },
   { nome: "Floresta", topo: "#d6f5d0", base: "#8fd3a0", chao: "#3d6b4a", deco: "", w: 2400, grama: "#5aa06a", luz: "#d8ff8a", mov: -1, astro: [100, 60, 28, "#fffde0"], c1: [.2, "rgba(70,140,90,.55)", "pinheiro", 120, 70], c2: [.5, "rgba(45,100,65,.8)", "pinheiro", 90, 52],
     p: [[250, 55, 70], [380, 105, 70], [510, 55, 70], [700, 80, 90], [850, 130, 90], [1050, 60, 100], [1300, 90, 70], [1420, 140, 70], [1540, 90, 70], [1800, 70, 100], [1940, 130, 90], [2080, 80, 80]],
     pos: [[415, 135], [895, 160], [1085, 90], [1455, 170], [1690, 32], [1990, 160], [2170, 110], [2320, 32]],
-    cor: [C("Gosto tanto de você."), C("Você deixa tudo mais leve."), C("Queria passear com você."), C("Meu dia fica melhor quando você aparece."), C("Até no silêncio lembro de você."), C("Tô com saudade, viu?"), C("Nosso caminho fica mais bonito."), C("Estamos quase lá.")],
+    cor: [C("Gostar de você é a coisa mais fácil do mundo."), C("Você deixa tudo mais leve, sabia?"), C("Queria passear de mãos dadas com você."), C("Meu dia melhora quando você aparece."), C("Até no silêncio eu ouço você."), C("Tô morrendo de saudade, viu?"), C("Todo caminho é bonito quando leva até você."), C("A gente tá quase lá, amor.")],
     mobs: [[620, 1.1, 520, 760], [1120, 1.45, 980, 1260], [1610, 1.25, 1500, 1780], [2050, 1.6, 1900, 2210]] },
   { nome: "A Distância", boss: 1, topo: "#3b2352", base: "#9a5fae", chao: "#2e1a45", deco: "", w: 640, grama: "#7a4a9a", luz: "#ffd3e6", mov: -1,
     astro: [520, 70, 34, "#ffe9a8"], c1: [.2, "#5a3a78", "colina", 90, 220], c2: [.5, "#3d2757", "pinheiro", 110, 120],
@@ -66,7 +67,7 @@ const FASES = [
   { nome: "Quase lá", topo: "#ffe6c9", base: "#ffb3c7", chao: "#7a4a6a", deco: "", w: 2600, grama: "#c77aa0", luz: "#ffc0d8", mov: 1, astro: [540, 60, 34, "#fff0c9"], c1: [.2, "rgba(255,150,180,.5)", "colina", 90, 180], c2: [.5, "rgba(160,90,140,.7)", "colina", 55, 110],
     p: [[220, 60, 80], [360, 110, 80], [500, 60, 80], [700, 90, 70], [830, 140, 70], [960, 90, 70], [1200, 70, 110], [1400, 120, 80], [1530, 70, 80], [1700, 110, 80], [1830, 160, 80], [2050, 60, 100], [2200, 110, 90]],
     pos: [[400, 140], [865, 170], [1255, 100], [1530, 32], [1870, 190], [2050, 32], [2245, 140], [2420, 32]],
-    cor: [C("Essa distância já pode acabar."), C("Quero te contar tudo de perto."), C("Mais um pouquinho e a gente se vê."), C("Nosso Natal vai ser juntinho."), C("Dia 23 tem abraço demorado."), C("Já consigo imaginar esse momento."), C("Você está quase aqui."), C("Agora vai.")],
+    cor: [C("Essa distância tá com os dias contados."), C("Tenho tanta coisa pra te contar pessoalmente."), C("Mais um pouquinho e eu te vejo."), C("Nosso Natal vai ser coladinho."), C("Dia 23 tem abraço demorado, já aviso."), C("Consigo até imaginar sua cara quando me vir."), C("Você tá logo ali, dá pra sentir."), C("Última corrida, amor. Vem!")],
     mobs: [[580, 1.3, 450, 730], [1040, 1.55, 900, 1190], [1450, 1.4, 1320, 1610], [1770, 1.7, 1660, 1910], [2150, 1.8, 2010, 2310]] }
 ];
 
@@ -80,7 +81,8 @@ const W = 640, H = 360, CHAO = 280, TAM = 64, DT = 1000 / 60;
 const cv = $("c"), ctx = cv.getContext("2d");
 if (!ctx.roundRect) ctx.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); };
 let S = 1;
-const tr = x => ctx.setTransform(S, 0, 0, S, x * S, 0);
+let shk = 0, sx = 0, sy = 0, fade = 0, combo = 0, comboT = 0;
+const tr = x => ctx.setTransform(S, 0, 0, S, (x + sx) * S, sy * S);
 function ajustar() {
   const r = cv.getBoundingClientRect();
   S = Math.min(3, Math.max(1, (r.width / W) * Math.min(window.devicePixelRatio || 1, 2)));
@@ -124,11 +126,24 @@ let ac = null; const bufs = {};
 function iniciarAudio() {
   if (ac) return;
   try {
-    const A = window.AudioContext || window.webkitAudioContext; if (!A) return; ac = new A();
+    const A = window.AudioContext || window.webkitAudioContext; if (!A) return; ac = new A(); musica();
     ["pulo", "coracao", "dano", "mob", "ataque", "chefe", "vitoria"].forEach(n => fetch(`assets/audio/${n}.wav`)
       .then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no)))
       .then(d => { bufs[n] = d; }).catch(() => {}));
   } catch (e) { ac = null; }
+}
+let mStep = 0;
+const ACORDES = [[261.6, 329.6, 392], [220, 261.6, 329.6], [174.6, 220, 261.6], [196, 246.9, 293.7]];
+function musica() {
+  const boss = est === "jogo" && FASES[fase].boss;
+  if (ac && cfg.som && !pausado && (est === "jogo" || est === "menu" || est === "fim") && ac.state === "running") {
+    try {
+      const c = ACORDES[(mStep >> 3) % 4], f = c[mStep % 3] * (mStep % 8 >= 4 ? 2 : 1) * (boss ? .75 : 1), o = ac.createOscillator(), g = ac.createGain(), n = ac.currentTime;
+      o.type = boss ? "sawtooth" : "triangle"; o.frequency.value = f; g.gain.setValueAtTime(.0001, n); g.gain.exponentialRampToValueAtTime(.045, n + .02); g.gain.exponentialRampToValueAtTime(.0001, n + .32);
+      o.connect(g); g.connect(ac.destination); o.start(n); o.stop(n + .35); mStep++;
+    } catch (e) {}
+  }
+  setTimeout(musica, boss ? 170 : 230);
 }
 function tocar(n, v = .6) {
   if (!cfg.som || !ac || !bufs[n]) return;
@@ -173,14 +188,14 @@ $("dReiniciar").onclick = () => { esconderTudo(); setEst("jogo"); carregar(fase)
 $("dMenu").onclick = irMenu;
 
 // ---- entrada: teclado + botões de toque (multitoque) ----
-const kb = {}, tc = {}, held = { L: 0, R: 0, J: 0, A: 0 }, prs = { L: 0, R: 0, J: 0, A: 0 }, pt = new Map();
-const BTN = { bL: "L", bR: "R", bJ: "J", bA: "A" };
+const kb = {}, tc = {}, held = { L: 0, R: 0, J: 0, A: 0, D: 0 }, prs = { L: 0, R: 0, J: 0, A: 0, D: 0 }, pt = new Map();
+const BTN = { bL: "L", bR: "R", bJ: "J", bA: "A", bD: "D" };
 function upd(k) { const on = !!(kb[k] || tc[k]); if (on && !held[k]) prs[k] = 1; held[k] = on ? 1 : 0; }
 function sync() {
   const on = new Set(pt.values());
   Object.keys(BTN).forEach(id => { const k = BTN[id]; tc[k] = on.has(k); upd(k); $(id).classList.toggle("on", tc[k]); });
 }
-function soltarTudo() { pt.clear(); Object.keys(kb).forEach(k => kb[k] = 0); sync(); ["L", "R", "J", "A"].forEach(upd); }
+function soltarTudo() { pt.clear(); Object.keys(kb).forEach(k => kb[k] = 0); sync(); ["L", "R", "J", "A", "D"].forEach(upd); }
 function apontar(e) {
   const el = document.elementFromPoint(e.clientX, e.clientY), b = el && el.closest && el.closest(".b");
   if (b && !b.hidden) pt.set(e.pointerId, BTN[b.id]); else pt.delete(e.pointerId);
@@ -191,7 +206,7 @@ window.addEventListener("pointermove", e => { if (pt.has(e.pointerId)) apontar(e
 ["pointerup", "pointercancel"].forEach(v => window.addEventListener(v, e => { if (pt.delete(e.pointerId)) sync(); }));
 ["blur", "orientationchange", "resize"].forEach(v => window.addEventListener(v, () => { soltarTudo(); setTimeout(ajustar, 120); ajustar(); }));
 document.addEventListener("visibilitychange", () => { soltarTudo(); if (document.hidden && est === "jogo" && !pausado) setPausa(true); });
-const KM = { ArrowLeft: "L", a: "L", A: "L", ArrowRight: "R", d: "R", D: "R", ArrowUp: "J", " ": "J", w: "J", W: "J", x: "A", X: "A", z: "A", Z: "A", j: "A", J: "A" };
+const KM = { ArrowLeft: "L", a: "L", A: "L", ArrowRight: "R", d: "R", D: "R", ArrowUp: "J", " ": "J", w: "J", W: "J", x: "A", X: "A", z: "A", Z: "A", j: "A", J: "A", Shift: "D", c: "D", C: "D" };
 document.addEventListener("keydown", e => {
   iniciarAudio();
   if (e.key === "Escape" || e.key === "p" || e.key === "P") { if (est === "jogo") setPausa(!pausado); return; }
@@ -216,7 +231,7 @@ function carregar(indice) {
   (F.voa || []).forEach(([x, alt, vx, min, max], i) => mobs.push({ x, y: CHAO - alt, y0: CHAO - alt, vx, v0: vx, min, max, tipo: 2, w: 46, h: 34, vivo: true, anim: i + 3, est: 0, tm: 0 }));
   cps = F.boss ? [] : [.34, .67].map(f => ({ x: Math.round(F.w * f), on: false }));
   ck = { x: 24 };
-  p = { x: 24, y: CHAO, vx: 0, vy: 0, no: true, dir: 1, and: 0, saltos: 0, coy: 0, buf: 0, vida: 3, inv: 0, ataque: 0, esperaAtaque: 0 };
+  p = { x: 24, y: CHAO, vx: 0, vy: 0, no: true, dir: 1, and: 0, saltos: 0, coy: 0, buf: 0, vida: 3, inv: 0, ataque: 0, esperaAtaque: 0, dash: 0, dashCd: 0 };
   boss = F.boss ? novoBoss() : null;
   $("bA").hidden = !F.boss;
   cam = 0; banner = 90; msgT = 0; msg = null; fotoEl = null; aviso = ""; avisoT = 0;
@@ -231,7 +246,7 @@ function derrota() {
 }
 function renascer() {
   esconderTudo(); setEst("jogo");
-  Object.assign(p, { x: boss ? 60 : ck.x, y: CHAO, vx: 0, vy: 0, vida: 3, inv: 150, saltos: 0, ataque: 0 });
+  Object.assign(p, { x: boss ? 60 : ck.x, y: CHAO, vx: 0, vy: 0, vida: 3, inv: 150, saltos: 0, ataque: 0, dash: 0, dashCd: 0 });
   if (boss) boss = novoBoss();
   cam = clamp(p.x - W / 2, 0, WORLD - W); msgT = 0; soltarTudo();
 }
@@ -248,7 +263,7 @@ function midia(c) {
 
 // ---- lógica (passo fixo de 1/60 s) ----
 function passo() {
-  t++;
+  t++; if (shk > 0) shk--; if (fade > 0) fade--; if (comboT > 0 && --comboT === 0) combo = 0;
   nuvens.forEach(n => { n.x += n.v; if (n.x > W + 60) n.x = -60; });
   luzes.forEach(l => { l.y += l.v * FASES[fase].mov; if (l.y > H) l.y = -5; if (l.y < -5) l.y = H; });
   fx.forEach(f => { f.x += f.vx; f.y += f.vy; f.vy += f.g; f.v--; }); fx = fx.filter(f => f.v > 0);
@@ -264,9 +279,12 @@ function passo() {
   if (banner > 0) banner--; if (p.inv > 0) p.inv--; if (p.esperaAtaque > 0) p.esperaAtaque--; if (avisoT > 0) avisoT--;
   if (prs.A && boss && p.esperaAtaque === 0) { p.ataque = 16; p.ataqueAcertou = false; p.esperaAtaque = 28; tocar("ataque"); }
   if (p.ataque > 0) p.ataque--;
+  if (p.dashCd > 0) p.dashCd--;
+  if (prs.D && p.dashCd === 0) { p.dash = 14; p.dashCd = 55; p.dir = (held.R - held.L) || p.dir; p.inv = Math.max(p.inv, 14); tocar("ataque", .4); shk = 3; }
+  if (p.no && Math.abs(p.vx) > 2.2 && t % 7 === 0) poeira(p.x - p.dir * 10, p.y + 4);
   // movimento com aceleração e desaceleração
   const mv = held.R - held.L;
-  if (mv) { p.vx = clamp(p.vx + mv * (p.no ? .55 : .32), -3.4, 3.4); p.dir = mv; p.and += .25; }
+  if (mv) { p.vx = clamp(p.vx + mv * (p.no ? .7 : .36), -3.9, 3.9); p.dir = mv; p.and += .25; }
   else { const f = p.no ? .6 : .15; p.vx = Math.abs(p.vx) < f ? 0 : p.vx - Math.sign(p.vx) * f; }
   p.x += p.vx; if (p.x < 20 || p.x > WORLD - 20) { p.x = clamp(p.x, 20, WORLD - 20); p.vx = 0; }
   // pulo com "coyote time", buffer e altura variável
@@ -278,6 +296,7 @@ function passo() {
   }
   if (!held.J && p.vy < -5) p.vy = -5;
   // gravidade e chão/plataformas (só pousa por cima)
+  if (p.dash > 0) { p.dash--; p.vx = p.dir * 8.5; p.vy = 0; if (p.dash % 2) fx.push({ x: p.x - p.dir * 12, y: p.y - 28, vx: 0, vy: 0, g: 0, v: 16, e: "💨" }); }
   const pes0 = p.y; p.vy = Math.min(p.vy + .6, 14); p.y += p.vy; let solo = CHAO;
   if (p.vy >= 0) plat.forEach(b => { if (p.x > b.x - 10 && p.x < b.x + b.w + 10 && pes0 <= b.y + 2 && p.y >= b.y) solo = Math.min(solo, b.y); });
   const pousou = !p.no && p.y >= solo && p.vy > 4;
@@ -288,15 +307,16 @@ function passo() {
   cps.forEach(c => { if (!c.on && p.x > c.x) { c.on = true; ck = { x: c.x }; aviso = "Checkpoint! 🚩"; avisoT = 100; tocar("coracao", .3); } });
   cor.forEach(c => {
     if (!c.pego && Math.hypot(p.x - c.x, p.y - 26 - c.y) < 38) {
-      c.pego = 1; total++; msg = c; msgT = (c.foto || c.audio) ? 420 : 300; tocar("coracao"); vibrar(18); estourar(c.x, c.y); midia(c);
+      c.pego = 1; total++; if (total % 8 === 0 && p.vida < 3) { p.vida++; fx.push({ x: p.x, y: p.y - 90, vx: 0, vy: -.8, g: 0, v: 55, e: "+1 ❤️" }); }
+      fx.push({ x: c.x, y: c.y - 10, vx: 0, vy: -1.1, g: 0, v: 45, e: "+1 💗" }); msg = c; msgT = (c.foto || c.audio) ? 420 : 300; tocar("coracao"); vibrar(18); estourar(c.x, c.y); midia(c);
     }
   });
   bossAtualizar();
   if (msgT > 0) msgT--;
-  ["L", "R", "J", "A"].forEach(k => prs[k] = 0);
+  ["L", "R", "J", "A", "D"].forEach(k => prs[k] = 0);
   if (est !== "jogo") return;
   if (cor.every(c => c.pego) && !(boss && boss.vida > 0) && p.x > WORLD - 40) {
-    if (fase < FASES.length - 1) { salvarProgresso(fase + 1); carregar(fase + 1); }
+    if (fase < FASES.length - 1) { salvarProgresso(fase + 1); carregar(fase + 1); fade = 50; tocar("vitoria", .5); }
     else {
       const s = lerProgresso(); s.finais++; s.melhor.fase = FASES.length - 1; s.melhor.coracoes = Math.max(s.melhor.coracoes, total); gravar(K_SAVE, s);
       setEst("fim"); cena = 0; cam = 0; p.x = 120; p.y = CHAO; elaX = 520; tocar("vitoria");
@@ -316,8 +336,8 @@ function moverMob(m) {
   if (m.x > m.max) { m.x = m.max; m.vx = -Math.abs(m.vx); }
 }
 function dano(msgTxt) {
-  p.vida--; p.inv = 90; p.vy = -7; p.no = false; tocar("dano"); vibrar([35, 35, 35]);
-  msg = { msg: p.vida > 0 ? msgTxt : "Vamos tentar essa fase de novo." }; fotoEl = null; msgT = 110;
+  p.vida--; shk = 14; p.inv = 90; p.vy = -7; p.no = false; tocar("dano"); vibrar([35, 35, 35]);
+  msg = { msg: p.vida > 0 ? msgTxt : "Calma, amor, respira e tenta de novo." }; fotoEl = null; msgT = 110;
   if (p.vida <= 0) derrota();
 }
 function colidirMobs(pesAntes) {
@@ -327,8 +347,13 @@ function colidirMobs(pesAntes) {
     const topo = m.y - m.h;
     if (Math.abs(p.x - m.x) < 12 + m.w / 2 - 6 && pf - 52 < m.y && pf > topo) {
       // só mata se estiver CAINDO e vindo de cima; encostar de lado/no chão causa dano
-      if (p.vy > 0 && pesAntes <= topo + 12) { m.vivo = false; p.vy = -8; p.saltos = 1; estourar(m.x, topo); tocar("mob"); vibrar(24); }
-      else if (p.inv === 0) { p.x = clamp(p.x - Math.sign(m.x - p.x || p.dir) * 28, 20, WORLD - 20); p.vx = 0; dano("Cuidado! Pule por cima deles."); }
+      if (p.dash > 0 || (p.vy > 0 && pesAntes <= topo + 12)) {
+        m.vivo = false; shk = 6; if (!p.dash) { p.vy = -8; p.saltos = 1; } estourar(m.x, topo); tocar("mob"); vibrar(24);
+        combo++; comboT = 150;
+        if (combo > 1) fx.push({ x: m.x, y: m.y - 70, vx: 0, vy: -.8, g: 0, v: 55, e: "COMBO x" + combo + "!" });
+        if (combo === 3 && p.vida < 3) { p.vida++; fx.push({ x: p.x, y: p.y - 90, vx: 0, vy: -.8, g: 0, v: 55, e: "+1 ❤️" }); tocar("coracao", .5); }
+      }
+      else if (p.inv === 0) { p.x = clamp(p.x - Math.sign(m.x - p.x || p.dir) * 28, 20, WORLD - 20); p.vx = 0; dano("Ai! Pula em cima deles, amor!"); }
     }
   }
 }
@@ -343,15 +368,15 @@ function bossAtualizar() {
   else if (b.est === "investe") { b.x += b.dir * vel; if (b.x < 70 || b.x > 590 || b.tm <= 0) { b.x = clamp(b.x, 70, 590); b.est = "cansado"; b.tm = 90; } }
   else if (b.tm <= 0) { b.est = "anda"; b.tm = 110; b.vx = b.x > 420 ? -1.6 : 1.6; }
   if (p.ataque > 0 && !p.ataqueAcertou && b.inv === 0 && Math.abs(dx) < 88 && Math.abs(p.y - b.y) < 110 && dx * p.dir > -12) {
-    b.vida--; b.inv = 55; p.ataqueAcertou = true; p.vy = -5; b.est = "anda"; b.tm = 100; b.vx = dx >= 0 ? 1.8 : -1.8;
+    b.vida--; shk = 12; b.inv = 55; p.ataqueAcertou = true; p.vy = -5; b.est = "anda"; b.tm = 100; b.vx = dx >= 0 ? 1.8 : -1.8;
     estourar(b.x, b.y - 40); tocar("mob");
     if (b.vida === 0) {
       for (let i = 0; i < 4; i++) estourar(b.x + i * 12 - 18, b.y - 30);
-      msg = { msg: "Boa! Você conseguiu. Agora vem me dar um abraço 💕" }; fotoEl = null; msgT = 260; tocar("vitoria");
+      msg = { msg: "Você venceu a distância! Agora vem cá me abraçar 💕" }; fotoEl = null; msgT = 260; tocar("vitoria");
     }
   }
   if (b.vida > 0 && b.est !== "cansado" && p.inv === 0 && Math.abs(dx) < 42 && p.y > b.y - 56 && p.y < b.y + 8) {
-    p.x = clamp(p.x - Math.sign(dx || p.dir) * 26, 20, WORLD - 20); p.vx = 0; dano("Ai! Pule por cima quando ele investir.");
+    p.x = clamp(p.x - Math.sign(dx || p.dir) * 26, 20, WORLD - 20); p.vx = 0; dano("Ops! Pula quando ele vier correndo!");
   }
 }
 
@@ -402,9 +427,9 @@ function texto(s, x, y, tam, c) {
 }
 
 function boneco(s, x, y, dir, and) {
-  const b = and ? Math.abs(Math.sin(and)) * 4 : 0;
+  const b = and ? Math.abs(Math.sin(and)) * 6 : 0;
   if (s === EU && p.inv > 0 && t % 10 < 5) return;
-  ctx.save(); ctx.translate(x, y - b); const sy = s === EU ? 1 + Math.min(.1, Math.abs(p.vy) * .01) : 1; ctx.scale(dir / sy, sy);
+  ctx.save(); ctx.translate(x, y - b); if (s === EU && !(est === "fim")) ctx.rotate(clamp(p.vx * .035, -.14, .14) * dir * dir + (p.no ? 0 : clamp(p.vy * .012, -.1, .1) * -dir * dir * 0)); const sy = s === EU ? 1 + Math.min(.1, Math.abs(p.vy) * .01) + (and ? 0 : Math.sin(t / 14) * .025) : 1 + Math.sin(t / 14 + 2) * .025; ctx.scale(dir / sy, sy);
   if (s.ok) {
     ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.beginPath(); ctx.arc(0, -TAM / 2 + 6, TAM / 2 + 3, 0, Math.PI * 2); ctx.fill();
     ctx.save(); ctx.beginPath(); ctx.arc(0, -TAM / 2 + 6, TAM / 2, 0, Math.PI * 2); ctx.clip();
@@ -427,12 +452,30 @@ function linhas(s, max) {
   s.split(" ").forEach(w => { if (ctx.measureText(l + w).width > max && l) { r.push(l.trim()); l = ""; } l += w + " "; });
   r.push(l.trim()); return r;
 }
+let ultMsg = null, msgIni = 0;
 function mostrarMsg() {
-  const f = fotoEl && fotoEl.naturalWidth ? fotoEl : null, w = f ? Math.min(190, 134 * f.naturalWidth / f.naturalHeight) : 0;
-  const x0 = f ? 74 + w + 14 : 74, mx = W - 74 - x0, L = linhas(msg.msg, mx), h = f ? 152 : Math.max(60, L.length * 24 + 30);
-  ctx.fillStyle = "rgba(255,255,255,.94)"; ctx.beginPath(); ctx.roundRect(60, 92, W - 120, h, 14); ctx.fill();
-  if (f) ctx.drawImage(f, 74, 101, w, 134);
-  L.forEach((l, i) => texto(l, x0 + mx / 2, 92 + h / 2 - (L.length - 1) * 12 + i * 24 + 6, 18, "#3b2350"));
+  if (msg !== ultMsg) { ultMsg = msg; msgIni = t; }
+  const f = fotoEl && fotoEl.naturalWidth ? fotoEl : null;
+  if (f) { // com foto: cartão grande
+    const w = Math.min(190, 134 * f.naturalWidth / f.naturalHeight), x0 = 74 + w + 14, mx = W - 74 - x0, L = linhas(msg.msg, mx), h = 152;
+    ctx.fillStyle = "rgba(255,255,255,.94)"; ctx.beginPath(); ctx.roundRect(60, 92, W - 120, h, 14); ctx.fill();
+    ctx.drawImage(f, 74, 101, w, 134);
+    L.forEach((l, i) => texto(l, x0 + mx / 2, 92 + h / 2 - (L.length - 1) * 12 + i * 24 + 6, 18, "#3b2350")); return;
+  }
+  // balão de fala saindo da cabeça do personagem, com texto que aparece letra por letra
+  const L = linhas(msg.msg, 290), bw = Math.min(330, Math.max(...L.map(l => ctx.measureText(l).width)) + 36), h = L.length * 24 + 24;
+  const px = p.x - cam, cx = clamp(px, bw / 2 + 8, W - bw / 2 - 8), by = clamp(p.y - TAM - 20 - h, 94, 300), bx = cx - bw / 2;
+  const ent = Math.min(1, (t - msgIni) / 8), pop = 1 - Math.pow(1 - ent, 3);
+  ctx.save(); ctx.translate(cx, by + h); ctx.scale(.7 + .3 * pop, .7 + .3 * pop); ctx.translate(-cx, -(by + h)); ctx.globalAlpha = pop;
+  ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+  ctx.fillStyle = "#fff"; ctx.strokeStyle = "#ff8fb1"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, h, 16); ctx.fill();
+  const tx = clamp(px, bx + 24, bx + bw - 24);
+  ctx.beginPath(); ctx.moveTo(tx - 10, by + h - 1); ctx.lineTo(px, p.y - TAM - 2); ctx.lineTo(tx + 10, by + h - 1); ctx.closePath(); ctx.fill();
+  ctx.shadowColor = "transparent"; ctx.beginPath(); ctx.roundRect(bx, by, bw, h, 16); ctx.stroke();
+  let resta = Math.floor((t - msgIni) / 1.6);
+  L.forEach((l, i) => { const v = l.slice(0, Math.max(0, resta)); resta -= l.length; ctx.textAlign = "left"; ctx.fillStyle = "#3b2350"; ctx.font = '600 18px Fredoka,"Trebuchet MS",sans-serif'; ctx.fillText(v, bx + 18, by + 30 + i * 24); });
+  ctx.restore();
 }
 function desenhaBoss() {
   const b = boss, w = Math.sin(t / 6) * 3;
@@ -480,6 +523,15 @@ function brilhos(F) {
   luzes.forEach(l => { ctx.globalAlpha = .4 + .5 * Math.sin(t / 20 + l.f); ctx.beginPath(); ctx.arc(l.x + Math.sin(t / 60 + l.f) * 10, l.y, 2.5, 0, 7); ctx.fill(); });
   ctx.globalAlpha = 1;
 }
+const CLIMA = ["🌸", "🫧", "🍃", "✨", "💗"];
+function clima() {
+  ctx.font = "16px serif"; ctx.textAlign = "center"; ctx.globalAlpha = .75;
+  for (let i = 0; i < 16; i++) {
+    const v = .4 + (i % 4) * .12, x = ((i * 137 + t * v) % (W + 40)) - 20 + Math.sin(t / 30 + i) * 14, y = ((i * 61 + t * (.6 + (i % 3) * .25)) % (H + 20)) - 10;
+    ctx.fillText(CLIMA[fase] || "✨", x, y);
+  }
+  ctx.globalAlpha = 1;
+}
 function grama(F) {
   const b = CHAO + 4; ctx.fillStyle = F.grama; ctx.fillRect(0, b, WORLD, 5);
   for (let x = Math.floor(cam / 22) * 22; x < cam + W + 22; x += 22) {
@@ -502,13 +554,15 @@ function final() {
   ctx.globalAlpha = 1;
 }
 function desenhar() {
+  const a = shk > 0 ? shk / 2.5 : 0; sx = (Math.random() - .5) * a; sy = (Math.random() - .5) * a;
   tr(0);
   const F = FASES[fase], g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, F.topo); g.addColorStop(1, F.base); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   ctx.font = "40px serif"; ctx.textAlign = "center";
   astro(F);
   nuvens.forEach(n => ctx.fillText("☁️", n.x, n.y));
-  camada(F.c1); camada(F.c2); brilhos(F);
+  camada(F.c1); camada(F.c2); brilhos(F); clima();
+  if (est === "jogo" && !F.boss && p) { ctx.fillStyle = `rgba(50,20,90,${clamp(p.x / WORLD, 0, 1) * .3})`; ctx.fillRect(0, 0, W, H); }
   tr(-Math.round(cam));
   ctx.fillStyle = F.chao; ctx.fillRect(0, CHAO + 4, WORLD, H - CHAO); grama(F);
   const jogando = est === "jogo" || est === "perdeu";
@@ -534,6 +588,8 @@ function desenhar() {
   } else final();
   ctx.font = "18px serif"; ctx.textAlign = "center";
   fx.forEach(f => { ctx.globalAlpha = Math.min(1, f.v / 30); ctx.fillText(f.e, f.x - (est === "fim" ? 0 : cam), f.y); }); ctx.globalAlpha = 1;
+  if (est === "jogo") { const v = ctx.createRadialGradient(W / 2, H / 2, H * .45, W / 2, H / 2, H * 1.05); v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(30,0,50,.35)"); tr(0); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H); }
+  if (fade > 0 && est === "jogo") { tr(0); const a = fade / 50; ctx.fillStyle = `rgba(255,214,232,${a * .85})`; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = a; texto("Fase completa! 💕", W / 2, 180, 40, "#8a2a5b"); ctx.globalAlpha = 1; }
 }
 
 // ---- início ----
