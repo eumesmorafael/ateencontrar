@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Até te encontrar</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#3b2350">
+<link rel="icon" href="assets/icon-192.png"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;background:#2a1740;overflow:hidden;font-family:"Fredoka","Trebuchet MS",system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100vw,calc(100vh*16/9));width:min(100vw,calc(100dvh*16/9));aspect-ratio:16/9}
+@media (orientation:portrait){#stage{top:env(safe-area-inset-top,0px);transform:translateX(-50%)}}
+canvas{display:block;width:100%;height:100%;background:#3b2350}
+.ic{position:absolute;top:1.5%;width:clamp(40px,7%,52px);aspect-ratio:1;border:0;border-radius:50%;background:rgba(255,255,255,.55);font-size:clamp(18px,3.4vw,24px);-webkit-tap-highlight-color:transparent;padding:0;display:none}
+#pause{left:1.5%}#som{right:1.5%;display:block}
+body[data-est=jogo] #pause{display:block}
+#ctl{display:none;position:fixed;inset:0;pointer-events:none;z-index:3;--s:clamp(64px,18vmin,96px)}
+body.touch[data-est=jogo]:not([data-pausa]) #ctl{display:block}
+.b{pointer-events:auto;position:absolute;bottom:max(22px,env(safe-area-inset-bottom));width:var(--s);height:var(--s);border:0;border-radius:50%;background:rgba(255,143,177,.6);color:#fff;font-size:calc(var(--s)*.4);-webkit-tap-highlight-color:transparent;touch-action:none;padding:0}
+.b.on{background:rgba(255,92,143,.95)}
+#bL{left:max(14px,env(safe-area-inset-left))}#bR{left:calc(max(14px,env(safe-area-inset-left)) + var(--s) + 12px)}
+#bJ{right:max(14px,env(safe-area-inset-right))}#bA{right:calc(max(14px,env(safe-area-inset-right)) + var(--s) + 12px);background:rgba(160,100,190,.78)}#bA[hidden]{display:none}
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(40,20,60,.72);z-index:6;padding:12px;box-sizing:border-box;overflow:auto}
+.ov.vis{display:flex}#menu{background:rgba(40,20,60,.45)}
+.card{background:linear-gradient(#fff6fa,#ffd9e8);color:#3b2350;border-radius:22px;padding:20px 22px;width:min(340px,100%);max-height:100%;overflow:auto;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.card h1{margin:0 0 4px;font-size:clamp(26px,7vw,36px)}.card h2{margin:0 0 10px;font-size:26px}.card p{margin:4px 0 12px;font-size:15px}
+.bts{display:grid;gap:9px}
+.mb{font:inherit;font-size:18px;font-weight:600;border:0;border-radius:14px;padding:12px;background:#fff;color:#8a2a5b;box-shadow:0 2px 0 #e9a9c4;cursor:pointer;touch-action:manipulation}
+.mb.pri{background:#ff5c8f;color:#fff;box-shadow:0 2px 0 #c93a6b}.mb.peq{font-size:14px;padding:8px}.mb[hidden]{display:none}.mb:focus-visible{outline:3px solid #3b2350}
+@media (orientation:landscape) and (max-height:480px){.card{padding:12px 16px;width:min(520px,100%)}.card h1{font-size:26px}.card p{margin:2px 0 8px;font-size:13px}.bts{grid-template-columns:1fr 1fr;gap:7px}.mb{font-size:15px;padding:8px}}
+</style></head><body data-est="menu">
+<div id="stage"><canvas id="c" width="640" height="360" aria-label="Jogo Até te encontrar"></canvas>
+<button class="ic" id="pause" aria-label="Pausar">Ⅱ</button><button class="ic" id="som" aria-label="Ligar ou desligar o som">🔊</button></div>
+<div id="ctl"><button class="b" id="bL" aria-label="Mover para a esquerda">◀</button><button class="b" id="bR" aria-label="Mover para a direita">▶</button><button class="b" id="bJ" aria-label="Pular">▲</button><button class="b" id="bA" aria-label="Atacar com espada" hidden>⚔️</button></div>
+<div class="ov vis" id="menu"><div class="card"><h1>Até te encontrar</h1><p id="sub"></p><p id="rec"></p><div class="bts">
+<button class="mb pri" id="mCont">Continuar</button><button class="mb" id="mComecar">Começar jogo</button><button class="mb" id="mNovo">Novo jogo</button><button class="mb" id="mSom">🔊 Som: ligado</button><button class="mb peq" id="mApagar">Apagar progresso</button></div></div></div>
+<div class="ov" id="pausa"><div class="card"><h2>Jogo pausado</h2><div class="bts"><button class="mb pri" id="pCont">Continuar</button><button class="mb" id="pReiniciar">Reiniciar fase</button><button class="mb" id="pMenu">Voltar ao menu</button></div></div></div>
+<div class="ov" id="derrota"><div class="card"><h2>Você caiu... 💔</h2><p id="dInfo"></p><div class="bts"><button class="mb pri" id="dTentar">Tentar novamente</button><button class="mb" id="dReiniciar">Reiniciar fase</button><button class="mb" id="dMenu">Voltar ao menu</button></div></div></div>
+<div class="ov" id="confirma"><div class="card"><h2>Tem certeza?</h2><p id="cTxt"></p><div class="bts"><button class="mb pri" id="cSim">Sim, apagar</button><button class="mb" id="cNao">Cancelar</button></div></div></div>
+<script>
+// ===== EDITE AQUI =====
+const NOME = "Amor";
+const DATA_ENCONTRO = new Date(2026, 11, 23); // ano, mês (0-11), dia
+const TEXTO_FINAL = "Agora sim! Vem cá, tô te esperando. Feliz Natal! 💕";
+// cada coração: C("mensagem") ou {msg:"...", foto:"fotos/1.jpg", audio:"audios/1.mp3"}
+const C = msg => ({ msg, foto: "", audio: "" });
+// w: largura da fase | p: blocos [x, altura, largura] | pos: corações [x, altura]
+const FASES = [
+  { nome: "Nossa cidade", topo: "#ffd3e6", base: "#b9a4f5", chao: "#5b3a70", deco: "", w: 1800, grama: "#8a5fa0", luz: "#fff7b0", mov: -1, astro: [540, 70, 30, "#fff3c4"], c1: [.15, "rgba(150,120,200,.55)", "predio", 130, 60], c2: [.4, "rgba(91,58,112,.75)", "predio", 90, 46],
+    p: [[300, 50, 90], [420, 100, 90], [640, 60, 120], [900, 70, 80], [1010, 130, 90], [1300, 50, 70], [1400, 100, 80], [1530, 150, 90]],
+    pos: [[180, 32], [465, 130], [700, 90], [1055, 160], [1240, 32], [1450, 130], [1575, 180], [1710, 32]],
+    cor: [C("Pensei em você agora."), C("Queria você aqui comigo."), C("Seu sorriso faz falta."), C("Tô contando os dias."), C("Você mora nos meus pensamentos."), C("Guardei um abraço pra você."), C("Cada passo vale a pena."), C("Estou chegando.")],
+    mobs: [[560, 1.1, 430, 780], [1180, 1.35, 960, 1390], [1640, 1.5, 1500, 1770]] },
+  { nome: "Atravessando o mar", topo: "#c9f0ff", base: "#8fb8ff", chao: "#3f6f9e", deco: "", w: 2100, grama: "#6fa3d4", luz: "#ffffff", mov: -1, astro: [540, 60, 32, "#fffbe0"], c1: [.15, "rgba(120,160,230,.6)", "colina", 70, 200], c2: [.5, "rgba(255,255,255,.28)", "onda", 16, 0],
+    p: [[200, 40, 80], [380, 70, 80], [560, 100, 80], [760, 60, 100], [1000, 90, 90], [1130, 140, 90], [1400, 50, 120], [1600, 100, 80], [1740, 150, 80], [1880, 100, 80]],
+    pos: [[240, 70], [600, 130], [810, 90], [1175, 170], [1350, 32], [1580, 130], [1780, 180], [1960, 130]],
+    cor: [C("Até o mar não parece tão longe."), C("Saudade de ficar do seu lado."), C("Já tô imaginando nosso encontro."), C("Queria te ver hoje."), C("Você me dá coragem."), C("Falta pouco pra gente se abraçar."), C("A distância vai perder."), C("Mais um passo.")],
+    mobs: [[470, 1.2, 350, 650], [920, 1.5, 760, 1080], [1460, 1.35, 1330, 1660], [1900, 1.6, 1750, 2040]] },
+  { nome: "Floresta", topo: "#d6f5d0", base: "#8fd3a0", chao: "#3d6b4a", deco: "", w: 2400, grama: "#5aa06a", luz: "#d8ff8a", mov: -1, astro: [100, 60, 28, "#fffde0"], c1: [.2, "rgba(70,140,90,.55)", "pinheiro", 120, 70], c2: [.5, "rgba(45,100,65,.8)", "pinheiro", 90, 52],
+    p: [[250, 55, 70], [380, 105, 70], [510, 55, 70], [700, 80, 90], [850, 130, 90], [1050, 60, 100], [1300, 90, 70], [1420, 140, 70], [1540, 90, 70], [1800, 70, 100], [1940, 130, 90], [2080, 80, 80]],
+    pos: [[415, 135], [895, 160], [1085, 90], [1455, 170], [1690, 32], [1990, 160], [2170, 110], [2320, 32]],
+    cor: [C("Gosto tanto de você."), C("Você deixa tudo mais leve."), C("Queria passear com você."), C("Meu dia fica melhor quando você aparece."), C("Até no silêncio lembro de você."), C("Tô com saudade, viu?"), C("Nosso caminho fica mais bonito."), C("Estamos quase lá.")],
+    mobs: [[620, 1.1, 520, 760], [1120, 1.45, 980, 1260], [1610, 1.25, 1500, 1780], [2050, 1.6, 1900, 2210]] },
+  { nome: "A Distância", boss: 1, topo: "#3b2352", base: "#9a5fae", chao: "#2e1a45", deco: "", w: 640, grama: "#7a4a9a", luz: "#ffd3e6", mov: -1,
+    astro: [520, 70, 34, "#ffe9a8"], c1: [.2, "#5a3a78", "colina", 90, 220], c2: [.5, "#3d2757", "pinheiro", 110, 120],
+    p: [[110, 70, 100], [430, 70, 100]], pos: [], cor: [] },
+  { nome: "Quase lá", topo: "#ffe6c9", base: "#ffb3c7", chao: "#7a4a6a", deco: "", w: 2600, grama: "#c77aa0", luz: "#ffc0d8", mov: 1, astro: [540, 60, 34, "#fff0c9"], c1: [.2, "rgba(255,150,180,.5)", "colina", 90, 180], c2: [.5, "rgba(160,90,140,.7)", "colina", 55, 110],
+    p: [[220, 60, 80], [360, 110, 80], [500, 60, 80], [700, 90, 70], [830, 140, 70], [960, 90, 70], [1200, 70, 110], [1400, 120, 80], [1530, 70, 80], [1700, 110, 80], [1830, 160, 80], [2050, 60, 100], [2200, 110, 90]],
+    pos: [[400, 140], [865, 170], [1255, 100], [1530, 32], [1870, 190], [2050, 32], [2245, 140], [2420, 32]],
+    cor: [C("Essa distância já pode acabar."), C("Quero te contar tudo de perto."), C("Mais um pouquinho e a gente se vê."), C("Nosso Natal vai ser juntinho."), C("Dia 23 tem abraço demorado."), C("Já consigo imaginar esse momento."), C("Você está quase aqui."), C("Agora vai.")],
+    mobs: [[580, 1.3, 450, 730], [1040, 1.55, 900, 1190], [1450, 1.4, 1320, 1610], [1770, 1.7, 1660, 1910], [2150, 1.8, 2010, 2310]] }
+];
+
+// mobs voadores extras (morcegos): [x, altura, velocidade, min, max]
+FASES[1].voa = [[1250, 120, 1.1, 1130, 1380]];
+FASES[2].voa = [[800, 110, 1.2, 700, 950], [1700, 120, 1.3, 1600, 1850]];
+FASES[4].voa = [[700, 120, 1.4, 600, 820], [1600, 130, 1.5, 1500, 1750], [2350, 120, 1.5, 2250, 2500]];
+
+const $ = id => document.getElementById(id);
+const W = 640, H = 360, CHAO = 280, TAM = 64, DT = 1000 / 60;
+const cv = $("c"), ctx = cv.getContext("2d");
+if (!ctx.roundRect) ctx.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); };
+let S = 1;
+const tr = x => ctx.setTransform(S, 0, 0, S, x * S, 0);
+function ajustar() {
+  const r = cv.getBoundingClientRect();
+  S = Math.min(3, Math.max(1, (r.width / W) * Math.min(window.devicePixelRatio || 1, 2)));
+  cv.width = Math.round(W * S); cv.height = Math.round(H * S);
+}
+function criarPersonagem(arquivo, emoji) {
+  const personagem = { ok: false, emoji, el: new Image() };
+  personagem.el.onload = () => personagem.ok = true;
+  personagem.el.src = arquivo;
+  return personagem;
+}
+const EU = criarPersonagem("assets/eu.png", "🧑"), ELA = criarPersonagem("assets/ela.png", "👩");
+let fase = 0, WORLD = 640, cam = 0, t = 0, cena = 0, est = "menu", pausado = false, total = 0, aviso = "", avisoT = 0;
+let p, elaX = 520, plat = [], cor = [], mobs = [], boss = null, cps = [], ck = { x: 24 };
+let msgT = 0, msg = null, fotoEl = null, banner = 0, fx = [], nuvens = [], luzes = [];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function setEst(e) { est = e; document.body.dataset.est = e; }
+
+// ---- progresso e configurações ----
+const K_PROG = "ate-te-encontrar-progress-v1", K_SAVE = "ate-te-encontrar-save-v2", K_CFG = "ate-te-encontrar-config-v1";
+const ler = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+const gravar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+let cfg = Object.assign({ som: true }, ler(K_CFG));
+function lerProgresso() {
+  let s = ler(K_SAVE);
+  if (!s || typeof s !== "object") { let old = 0; try { old = Number(localStorage.getItem(K_PROG)) || 0; } catch (e) {} s = { desbloqueada: old, melhor: { fase: old, coracoes: 0 }, finais: 0 }; }
+  s.melhor = Object.assign({ fase: 0, coracoes: 0 }, s.melhor);
+  s.desbloqueada = clamp(s.desbloqueada | 0, 0, FASES.length - 1);
+  return s;
+}
+function salvarProgresso(indice) {
+  const s = lerProgresso();
+  s.desbloqueada = Math.max(s.desbloqueada, indice); s.melhor.fase = Math.max(s.melhor.fase, indice);
+  s.melhor.coracoes = Math.max(s.melhor.coracoes, total);
+  gravar(K_SAVE, s);
+}
+function apagarProgresso() { try { localStorage.removeItem(K_SAVE); localStorage.removeItem(K_PROG); } catch (e) {} }
+
+// ---- áudio (arquivos locais em assets/audio; o jogo funciona sem som) ----
+let ac = null; const bufs = {};
+function iniciarAudio() {
+  if (ac) return;
+  try {
+    const A = window.AudioContext || window.webkitAudioContext; if (!A) return; ac = new A();
+    ["pulo", "coracao", "dano", "mob", "ataque", "chefe", "vitoria"].forEach(n => fetch(`assets/audio/${n}.wav`)
+      .then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no)))
+      .then(d => { bufs[n] = d; }).catch(() => {}));
+  } catch (e) { ac = null; }
+}
+function tocar(n, v = .6) {
+  if (!cfg.som || !ac || !bufs[n]) return;
+  try {
+    if (ac.state === "suspended") ac.resume().catch(() => {});
+    const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = bufs[n]; g.gain.value = v; s.connect(g); g.connect(ac.destination); s.start();
+  } catch (e) {}
+}
+const vibrar = padrao => { try { if (navigator.vibrate) navigator.vibrate(padrao); } catch (e) {} };
+function atualizarSom() { const s = cfg.som; $("som").textContent = s ? "🔊" : "🔇"; $("mSom").textContent = s ? "🔊 Som: ligado" : "🔇 Som: desligado"; }
+function alternarSom() { cfg.som = !cfg.som; gravar(K_CFG, cfg); iniciarAudio(); atualizarSom(); }
+
+// ---- telas ----
+function mostrar(id, on) { const el = $(id); el.classList.toggle("vis", on); if (on) { const b = el.querySelector(".mb:not([hidden])"); if (b) b.focus({ preventScroll: true }); } }
+function esconderTudo() { ["menu", "pausa", "derrota", "confirma"].forEach(i => mostrar(i, false)); }
+function setPausa(on) { pausado = on; if (on) document.body.dataset.pausa = "1"; else delete document.body.dataset.pausa; mostrar("pausa", on); soltarTudo(); }
+function irMenu() {
+  esconderTudo(); setPausa(false); setEst("menu"); carregar(0); atualizarMenu(); mostrar("menu", true);
+}
+function atualizarMenu() {
+  const s = lerProgresso(), tem = s.desbloqueada > 0 || s.melhor.fase > 0 || s.melhor.coracoes > 0 || s.finais > 0;
+  $("sub").textContent = "um jogo para você, " + NOME;
+  $("mCont").hidden = !tem; $("mNovo").hidden = !tem; $("mApagar").hidden = !tem;
+  $("mCont").textContent = `Continuar · Fase ${s.desbloqueada + 1}`;
+  $("rec").textContent = tem ? `Melhor progresso: fase ${s.melhor.fase + 1} de ${FASES.length} · ${s.melhor.coracoes} 💗` : "";
+  atualizarSom();
+}
+function iniciar(i) { iniciarAudio(); esconderTudo(); setPausa(false); total = 0; setEst("jogo"); carregar(i); }
+function perguntar(txt, acao) { $("cTxt").textContent = txt; $("cSim").onclick = () => { mostrar("confirma", false); acao(); }; mostrar("confirma", true); }
+$("mCont").onclick = () => iniciar(lerProgresso().desbloqueada);
+$("mComecar").onclick = () => iniciar(0);
+$("mNovo").onclick = () => perguntar("Isso apaga todo o seu progresso e começa um jogo novo.", () => { apagarProgresso(); iniciar(0); });
+$("mApagar").onclick = () => perguntar("Isso apaga a fase desbloqueada e o melhor progresso salvos neste aparelho.", () => { apagarProgresso(); irMenu(); });
+$("cNao").onclick = () => mostrar("confirma", false) || mostrar("menu", true);
+$("mSom").onclick = $("som").onclick = alternarSom;
+$("pause").onclick = () => { if (est === "jogo") setPausa(!pausado); };
+$("pCont").onclick = () => setPausa(false);
+$("pReiniciar").onclick = () => { setPausa(false); carregar(fase); };
+$("pMenu").onclick = irMenu;
+$("dTentar").onclick = renascer;
+$("dReiniciar").onclick = () => { esconderTudo(); setEst("jogo"); carregar(fase); };
+$("dMenu").onclick = irMenu;
+
+// ---- entrada: teclado + botões de toque (multitoque) ----
+const kb = {}, tc = {}, held = { L: 0, R: 0, J: 0, A: 0 }, prs = { L: 0, R: 0, J: 0, A: 0 }, pt = new Map();
+const BTN = { bL: "L", bR: "R", bJ: "J", bA: "A" };
+function upd(k) { const on = !!(kb[k] || tc[k]); if (on && !held[k]) prs[k] = 1; held[k] = on ? 1 : 0; }
+function sync() {
+  const on = new Set(pt.values());
+  Object.keys(BTN).forEach(id => { const k = BTN[id]; tc[k] = on.has(k); upd(k); $(id).classList.toggle("on", tc[k]); });
+}
+function soltarTudo() { pt.clear(); Object.keys(kb).forEach(k => kb[k] = 0); sync(); ["L", "R", "J", "A"].forEach(upd); }
+function apontar(e) {
+  const el = document.elementFromPoint(e.clientX, e.clientY), b = el && el.closest && el.closest(".b");
+  if (b && !b.hidden) pt.set(e.pointerId, BTN[b.id]); else pt.delete(e.pointerId);
+  sync();
+}
+$("ctl").addEventListener("pointerdown", e => { e.preventDefault(); iniciarAudio(); if (e.target.closest(".b")) apontar(e); });
+window.addEventListener("pointermove", e => { if (pt.has(e.pointerId)) apontar(e); });
+["pointerup", "pointercancel"].forEach(v => window.addEventListener(v, e => { if (pt.delete(e.pointerId)) sync(); }));
+["blur", "orientationchange", "resize"].forEach(v => window.addEventListener(v, () => { soltarTudo(); setTimeout(ajustar, 120); ajustar(); }));
+document.addEventListener("visibilitychange", () => { soltarTudo(); if (document.hidden && est === "jogo" && !pausado) setPausa(true); });
+const KM = { ArrowLeft: "L", a: "L", A: "L", ArrowRight: "R", d: "R", D: "R", ArrowUp: "J", " ": "J", w: "J", W: "J", x: "A", X: "A", z: "A", Z: "A", j: "A", J: "A" };
+document.addEventListener("keydown", e => {
+  iniciarAudio();
+  if (e.key === "Escape" || e.key === "p" || e.key === "P") { if (est === "jogo") setPausa(!pausado); return; }
+  if (est === "fim" && cena > 400 && (e.key === "Enter" || e.key === " ")) return irMenu();
+  const k = KM[e.key]; if (est !== "jogo" || !k) return;
+  e.preventDefault(); kb[k] = 1; upd(k);
+});
+document.addEventListener("keyup", e => { const k = KM[e.key]; if (k) { kb[k] = 0; upd(k); } });
+cv.addEventListener("pointerdown", () => { iniciarAudio(); if (est === "fim" && cena > 400) irMenu(); });
+document.oncontextmenu = e => e.preventDefault();
+
+// ---- fases ----
+function novoBoss() { return { x: 420, y: CHAO + 4, vx: 1.6, vida: 3, inv: 0, est: "anda", tm: 110, dir: -1 }; }
+function carregar(indice) {
+  fase = indice;
+  const F = FASES[fase];
+  WORLD = F.w;
+  plat = F.p.map(([x, altura, largura]) => ({ x, y: CHAO - altura, w: largura }));
+  cor = F.pos.map(([x, altura], i) => ({ ...F.cor[i], x, y: CHAO - altura, pego: false }));
+  // tipo 0 = gosma (patrulha) | tipo 1 = rosinha (patrulha e investe quando você chega perto) | tipo 2 = morcego (voa em onda)
+  mobs = (F.mobs || []).map(([x, vx, min, max], i) => ({ x, y: CHAO + 4, vx, v0: vx, min, max, tipo: i % 2, w: 50, h: 44, vivo: true, anim: i, est: 0, tm: 40 }));
+  (F.voa || []).forEach(([x, alt, vx, min, max], i) => mobs.push({ x, y: CHAO - alt, y0: CHAO - alt, vx, v0: vx, min, max, tipo: 2, w: 46, h: 34, vivo: true, anim: i + 3, est: 0, tm: 0 }));
+  cps = F.boss ? [] : [.34, .67].map(f => ({ x: Math.round(F.w * f), on: false }));
+  ck = { x: 24 };
+  p = { x: 24, y: CHAO, vx: 0, vy: 0, no: true, dir: 1, and: 0, saltos: 0, coy: 0, buf: 0, vida: 3, inv: 0, ataque: 0, esperaAtaque: 0 };
+  boss = F.boss ? novoBoss() : null;
+  $("bA").hidden = !F.boss;
+  cam = 0; banner = 90; msgT = 0; msg = null; fotoEl = null; aviso = ""; avisoT = 0;
+  nuvens = Array.from({ length: 5 }, (_, i) => ({ x: i * 155 + 25, y: 35 + (i % 3) * 32, v: .15 + (i % 2) * .1 }));
+  luzes = Array.from({ length: 24 }, (_, i) => ({ x: (i * 83) % W, y: (i * 47) % H, v: .15 + (i % 5) * .04, f: i }));
+  soltarTudo();
+}
+function derrota() {
+  setEst("perdeu"); cena = 0; soltarTudo(); vibrar([70, 50, 70]);
+  $("dInfo").textContent = `Fase ${fase + 1}: ${FASES[fase].nome}` + (ck.x > 24 ? " · checkpoint guardado 🚩" : "");
+  mostrar("derrota", true);
+}
+function renascer() {
+  esconderTudo(); setEst("jogo");
+  Object.assign(p, { x: boss ? 60 : ck.x, y: CHAO, vx: 0, vy: 0, vida: 3, inv: 150, saltos: 0, ataque: 0 });
+  if (boss) boss = novoBoss();
+  cam = clamp(p.x - W / 2, 0, WORLD - W); msgT = 0; soltarTudo();
+}
+
+// ---- efeitos ----
+const estourar = (x, y) => { for (let i = 0; i < 14; i++) fx.push({ x, y, vx: (Math.random() - .5) * 5, vy: -Math.random() * 4 - 1, g: .12, v: 60, e: "💗" }); };
+const poeira = (x, y) => { for (let i = 0; i < 4; i++) fx.push({ x, y, vx: (Math.random() - .5) * 2, vy: -Math.random(), g: 0, v: 22, e: "•" }); };
+const chuva = () => fx.push({ x: Math.random() * W, y: -10, vx: 0, vy: 1 + Math.random() * 2, g: 0, v: 220, e: Math.random() < .5 ? "💗" : "✨" });
+function midia(c) {
+  fotoEl = null;
+  if (c.foto) { fotoEl = new Image(); fotoEl.src = c.foto; }
+  if (c.audio && cfg.som) { try { new Audio(c.audio).play().catch(() => {}); } catch (e) {} }
+}
+
+// ---- lógica (passo fixo de 1/60 s) ----
+function passo() {
+  t++;
+  nuvens.forEach(n => { n.x += n.v; if (n.x > W + 60) n.x = -60; });
+  luzes.forEach(l => { l.y += l.v * FASES[fase].mov; if (l.y > H) l.y = -5; if (l.y < -5) l.y = H; });
+  fx.forEach(f => { f.x += f.vx; f.y += f.vy; f.vy += f.g; f.v--; }); fx = fx.filter(f => f.v > 0);
+  if (est === "menu") return;
+  if (est === "perdeu") { cena++; return; }
+  if (est === "fim") {
+    cena++;
+    if (cena < 200) { p.x += (290 - p.x) * .03; elaX += (350 - elaX) * .03; }
+    if (cena > 60 && cena % 5 === 0) chuva();
+    return;
+  }
+  if (pausado) return;
+  if (banner > 0) banner--; if (p.inv > 0) p.inv--; if (p.esperaAtaque > 0) p.esperaAtaque--; if (avisoT > 0) avisoT--;
+  if (prs.A && boss && p.esperaAtaque === 0) { p.ataque = 16; p.ataqueAcertou = false; p.esperaAtaque = 28; tocar("ataque"); }
+  if (p.ataque > 0) p.ataque--;
+  // movimento com aceleração e desaceleração
+  const mv = held.R - held.L;
+  if (mv) { p.vx = clamp(p.vx + mv * (p.no ? .55 : .32), -3.4, 3.4); p.dir = mv; p.and += .25; }
+  else { const f = p.no ? .6 : .15; p.vx = Math.abs(p.vx) < f ? 0 : p.vx - Math.sign(p.vx) * f; }
+  p.x += p.vx; if (p.x < 20 || p.x > WORLD - 20) { p.x = clamp(p.x, 20, WORLD - 20); p.vx = 0; }
+  // pulo com "coyote time", buffer e altura variável
+  if (p.no) p.coy = 6; else if (p.coy > 0) p.coy--;
+  if (prs.J) p.buf = 7; else if (p.buf > 0) p.buf--;
+  if (p.buf > 0 && (p.coy > 0 || p.saltos < 2)) {
+    p.vy = p.saltos === 0 ? -11.5 : -10; p.saltos++;
+    p.no = false; p.buf = 0; p.coy = 0; tocar("pulo", .35); poeira(p.x, p.y + 4);
+  }
+  if (!held.J && p.vy < -5) p.vy = -5;
+  // gravidade e chão/plataformas (só pousa por cima)
+  const pes0 = p.y; p.vy = Math.min(p.vy + .6, 14); p.y += p.vy; let solo = CHAO;
+  if (p.vy >= 0) plat.forEach(b => { if (p.x > b.x - 10 && p.x < b.x + b.w + 10 && pes0 <= b.y + 2 && p.y >= b.y) solo = Math.min(solo, b.y); });
+  const pousou = !p.no && p.y >= solo && p.vy > 4;
+  p.no = p.y >= solo; if (p.no) { p.y = solo; p.vy = 0; p.saltos = 0; if (pousou) poeira(p.x, p.y + 4); }
+  mobs.forEach(m => moverMob(m));
+  colidirMobs(pes0 + 4);
+  cam += (clamp(p.x - W / 2, 0, Math.max(0, WORLD - W)) - cam) * .12;
+  cps.forEach(c => { if (!c.on && p.x > c.x) { c.on = true; ck = { x: c.x }; aviso = "Checkpoint! 🚩"; avisoT = 100; tocar("coracao", .3); } });
+  cor.forEach(c => {
+    if (!c.pego && Math.hypot(p.x - c.x, p.y - 26 - c.y) < 38) {
+      c.pego = 1; total++; msg = c; msgT = (c.foto || c.audio) ? 420 : 300; tocar("coracao"); vibrar(18); estourar(c.x, c.y); midia(c);
+    }
+  });
+  bossAtualizar();
+  if (msgT > 0) msgT--;
+  ["L", "R", "J", "A"].forEach(k => prs[k] = 0);
+  if (est !== "jogo") return;
+  if (cor.every(c => c.pego) && !(boss && boss.vida > 0) && p.x > WORLD - 40) {
+    if (fase < FASES.length - 1) { salvarProgresso(fase + 1); carregar(fase + 1); }
+    else {
+      const s = lerProgresso(); s.finais++; s.melhor.fase = FASES.length - 1; s.melhor.coracoes = Math.max(s.melhor.coracoes, total); gravar(K_SAVE, s);
+      setEst("fim"); cena = 0; cam = 0; p.x = 120; p.y = CHAO; elaX = 520; tocar("vitoria");
+    }
+  }
+}
+function moverMob(m) {
+  if (!m.vivo) return;
+  if (m.tipo === 1) {
+    m.tm--;
+    if (m.est === 0) { m.x += m.vx; if (m.tm <= 0 && Math.abs(p.x - m.x) < 170 && Math.abs(p.y + 4 - m.y) < 50) { m.est = 1; m.tm = 32; } }
+    else if (m.est === 1) { if (m.tm <= 0) { m.est = 2; m.tm = 34; m.dir = Math.sign(p.x - m.x) || 1; } }
+    else { m.x += m.dir * Math.abs(m.v0) * 3; if (m.tm <= 0) { m.est = 0; m.tm = 110; } }
+  } else m.x += m.vx;
+  if (m.tipo === 2) m.y = m.y0 + Math.sin(t / 20 + m.anim) * 26;
+  if (m.x < m.min) { m.x = m.min; m.vx = Math.abs(m.vx); }
+  if (m.x > m.max) { m.x = m.max; m.vx = -Math.abs(m.vx); }
+}
+function dano(msgTxt) {
+  p.vida--; p.inv = 90; p.vy = -7; p.no = false; tocar("dano"); vibrar([35, 35, 35]);
+  msg = { msg: p.vida > 0 ? msgTxt : "Vamos tentar essa fase de novo." }; fotoEl = null; msgT = 110;
+  if (p.vida <= 0) derrota();
+}
+function colidirMobs(pesAntes) {
+  const pf = p.y + 4;
+  for (const m of mobs) {
+    if (!m.vivo || est !== "jogo") continue;
+    const topo = m.y - m.h;
+    if (Math.abs(p.x - m.x) < 12 + m.w / 2 - 6 && pf - 52 < m.y && pf > topo) {
+      // só mata se estiver CAINDO e vindo de cima; encostar de lado/no chão causa dano
+      if (p.vy > 0 && pesAntes <= topo + 12) { m.vivo = false; p.vy = -8; p.saltos = 1; estourar(m.x, topo); tocar("mob"); vibrar(24); }
+      else if (p.inv === 0) { p.x = clamp(p.x - Math.sign(m.x - p.x || p.dir) * 28, 20, WORLD - 20); p.vx = 0; dano("Cuidado! Pule por cima deles."); }
+    }
+  }
+}
+
+// ---- chefe: anda → avisa (❗) → investe em linha reta → fica cansado ----
+function bossAtualizar() {
+  const b = boss; if (!b || b.vida <= 0 || est !== "jogo") return;
+  if (b.inv > 0) b.inv--; b.tm--;
+  const dx = b.x - p.x, vel = b.vida <= 1 ? 5.8 : 5.2;
+  if (b.est === "anda") { b.x += b.vx; if (b.x < 260 || b.x > 580) b.vx *= -1; if (b.tm <= 0) { b.est = "aviso"; b.tm = 50; tocar("chefe"); } }
+  else if (b.est === "aviso") { b.dir = Math.sign(p.x - b.x) || 1; if (b.tm <= 0) { b.est = "investe"; b.tm = 60; } }
+  else if (b.est === "investe") { b.x += b.dir * vel; if (b.x < 70 || b.x > 590 || b.tm <= 0) { b.x = clamp(b.x, 70, 590); b.est = "cansado"; b.tm = 90; } }
+  else if (b.tm <= 0) { b.est = "anda"; b.tm = 110; b.vx = b.x > 420 ? -1.6 : 1.6; }
+  if (p.ataque > 0 && !p.ataqueAcertou && b.inv === 0 && Math.abs(dx) < 88 && Math.abs(p.y - b.y) < 110 && dx * p.dir > -12) {
+    b.vida--; b.inv = 55; p.ataqueAcertou = true; p.vy = -5; b.est = "anda"; b.tm = 100; b.vx = dx >= 0 ? 1.8 : -1.8;
+    estourar(b.x, b.y - 40); tocar("mob");
+    if (b.vida === 0) {
+      for (let i = 0; i < 4; i++) estourar(b.x + i * 12 - 18, b.y - 30);
+      msg = { msg: "Boa! Você conseguiu. Agora vem me dar um abraço 💕" }; fotoEl = null; msgT = 260; tocar("vitoria");
+    }
+  }
+  if (b.vida > 0 && b.est !== "cansado" && p.inv === 0 && Math.abs(dx) < 42 && p.y > b.y - 56 && p.y < b.y + 8) {
+    p.x = clamp(p.x - Math.sign(dx || p.dir) * 26, 20, WORLD - 20); p.vx = 0; dano("Ai! Pule por cima quando ele investir.");
+  }
+}
+
+// ---- desenho ----
+function desenhaMobs() {
+  mobs.forEach(m => {
+    if (!m.vivo) return;
+    const pulso = m.tipo === 2 ? 0 : Math.sin(t / 8 + m.anim) * 2, olha = p.x > m.x ? 2 : -2;
+    ctx.save(); ctx.translate(m.x + (m.est === 1 ? Math.sin(t * 2) * 2 : 0), m.y + pulso);
+    if (m.tipo === 2) {
+      const asa = Math.sin(t / 3 + m.anim) * 12;
+      ctx.fillStyle = "#5a3a78"; ctx.beginPath(); ctx.ellipse(0, -18, 15, 14, 0, 0, 7); ctx.fill();
+      [-1, 1].forEach(s => { ctx.beginPath(); ctx.moveTo(s * 10, -20); ctx.lineTo(s * 34, -34 + asa); ctx.lineTo(s * 28, -10); ctx.closePath(); ctx.fill(); });
+      ctx.fillStyle = "#fff"; [-5, 5].forEach(x => { ctx.beginPath(); ctx.arc(x, -20, 4, 0, 7); ctx.fill(); });
+      ctx.fillStyle = "#ff5c8f"; [-5, 5].forEach(x => { ctx.beginPath(); ctx.arc(x + olha / 2, -20, 2, 0, 7); ctx.fill(); });
+    } else {
+      ctx.fillStyle = "rgba(0,0,0,.15)"; ctx.beginPath(); ctx.ellipse(0, 1, 26, 5, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = m.tipo ? (m.est === 2 ? "#ff4f7d" : "#e889b0") : "#6ec5b0";
+      ctx.beginPath(); ctx.ellipse(0, -22, 25, 22, 0, Math.PI, 0); ctx.lineTo(25, 0); ctx.lineTo(-25, 0); ctx.closePath(); ctx.fill();
+      if (m.tipo) { ctx.beginPath(); [-14, 0, 14].forEach(x => { ctx.moveTo(x - 5, -40); ctx.lineTo(x, -50); ctx.lineTo(x + 5, -40); }); ctx.fill(); }
+      ctx.fillStyle = "#fff"; [-9, 9].forEach(x => { ctx.beginPath(); ctx.arc(x, -22, 7, 0, Math.PI * 2); ctx.fill(); });
+      ctx.fillStyle = "#3b2350"; [-9, 9].forEach(x => { ctx.beginPath(); ctx.arc(x + olha, -21, 3, 0, Math.PI * 2); ctx.fill(); });
+      ctx.strokeStyle = "#3b2350"; ctx.lineWidth = 3; ctx.beginPath();
+      if (m.tipo) { ctx.moveTo(-16, -32); ctx.lineTo(-4, -28); ctx.moveTo(16, -32); ctx.lineTo(4, -28); ctx.moveTo(-6, -8); ctx.lineTo(6, -8); } else ctx.arc(0, -12, 7, 0, Math.PI);
+      ctx.stroke();
+      if (m.est === 1) texto("❗", 0, -56, 24, "#fff");
+    }
+    ctx.restore();
+  });
+}
+function desenhaCheckpoints() {
+  cps.forEach(c => {
+    ctx.fillStyle = "#fff"; ctx.fillRect(c.x - 1.5, CHAO - 48, 3, 52);
+    ctx.fillStyle = c.on ? "#ff5c8f" : "rgba(255,255,255,.55)"; ctx.beginPath(); ctx.moveTo(c.x + 1.5, CHAO - 48); ctx.lineTo(c.x + 30, CHAO - 38); ctx.lineTo(c.x + 1.5, CHAO - 28); ctx.fill();
+  });
+}
+function hud(F) {
+  const cl = F.boss ? "#fff" : "#3b2350", falta = cor.filter(c => !c.pego).length, ultima = fase === FASES.length - 1, vivos = mobs.filter(m => m.vivo).length;
+  ctx.fillStyle = F.boss ? "rgba(0,0,0,.28)" : "rgba(255,255,255,.4)"; ctx.beginPath(); ctx.roundRect(W / 2 - 185, 6, 370, 80, 12); ctx.fill();
+  texto(`Fase ${fase + 1} de ${FASES.length} · ${F.nome}`, W / 2, 27, 18, cl);
+  const vidas = "❤️".repeat(Math.max(0, p.vida)) + "🖤".repeat(Math.max(0, 3 - p.vida));
+  texto(boss ? `${"💜".repeat(Math.max(0, boss.vida))}   ${vidas}` : `💗 ${cor.length - falta}/${cor.length}   👾 ${vivos}   ${vidas}`, W / 2, 52, 17, cl);
+  const obj = boss ? (boss.vida > 0 ? "Objetivo: ataque com ⚔️ e pule a investida" : "Objetivo: vá até a seta ➡️") : falta ? "Objetivo: pegue todos os corações" : ultima ? "Objetivo: corra até ela! 💕" : "Objetivo: siga até a seta ➡️";
+  texto(obj, W / 2, 75, 14, cl);
+}
+function texto(s, x, y, tam, c) {
+  ctx.font = `600 ${tam}px Fredoka,"Trebuchet MS",sans-serif`; ctx.fillStyle = c; ctx.textAlign = "center"; ctx.fillText(s, x, y);
+}
+
+function boneco(s, x, y, dir, and) {
+  const b = and ? Math.abs(Math.sin(and)) * 4 : 0;
+  if (s === EU && p.inv > 0 && t % 10 < 5) return;
+  ctx.save(); ctx.translate(x, y - b); const sy = s === EU ? 1 + Math.min(.1, Math.abs(p.vy) * .01) : 1; ctx.scale(dir / sy, sy);
+  if (s.ok) {
+    ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.beginPath(); ctx.arc(0, -TAM / 2 + 6, TAM / 2 + 3, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.arc(0, -TAM / 2 + 6, TAM / 2, 0, Math.PI * 2); ctx.clip();
+    const largura = Math.min(TAM, TAM * s.el.width / s.el.height);
+    ctx.drawImage(s.el, -largura / 2, -TAM + 6, largura, TAM); ctx.restore();
+  }
+  else { ctx.font = "42px serif"; ctx.textAlign = "center"; ctx.fillText(s.emoji, 0, 4); }
+  ctx.restore();
+}
+function desenhaGolpe() {
+  if (p.ataque <= 0) return;
+  ctx.save(); ctx.translate(p.x + p.dir * 30, p.y - 38); ctx.scale(p.dir, 1);
+  ctx.strokeStyle = "rgba(255,255,255,.95)"; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(0, 0, 26, -1.25, .95); ctx.stroke();
+  ctx.font = "28px serif"; ctx.textAlign = "center"; ctx.fillText("⚔️", 22, -8);
+  ctx.restore();
+}
+function linhas(s, max) {
+  ctx.font = '600 18px Fredoka,sans-serif'; const r = []; let l = "";
+  s.split(" ").forEach(w => { if (ctx.measureText(l + w).width > max && l) { r.push(l.trim()); l = ""; } l += w + " "; });
+  r.push(l.trim()); return r;
+}
+function mostrarMsg() {
+  const f = fotoEl && fotoEl.naturalWidth ? fotoEl : null, w = f ? Math.min(190, 134 * f.naturalWidth / f.naturalHeight) : 0;
+  const x0 = f ? 74 + w + 14 : 74, mx = W - 74 - x0, L = linhas(msg.msg, mx), h = f ? 152 : Math.max(60, L.length * 24 + 30);
+  ctx.fillStyle = "rgba(255,255,255,.94)"; ctx.beginPath(); ctx.roundRect(60, 92, W - 120, h, 14); ctx.fill();
+  if (f) ctx.drawImage(f, 74, 101, w, 134);
+  L.forEach((l, i) => texto(l, x0 + mx / 2, 92 + h / 2 - (L.length - 1) * 12 + i * 24 + 6, 18, "#3b2350"));
+}
+function desenhaBoss() {
+  const b = boss, w = Math.sin(t / 6) * 3;
+  if (b.inv > 0 && t % 8 < 4) return;
+  ctx.save(); ctx.translate(b.x + (b.est === "aviso" ? Math.sin(t * 2) * 3 : 0), b.y);
+  ctx.fillStyle = "#4a2f7a"; ctx.beginPath(); ctx.moveTo(-30, -52); ctx.lineTo(-24, -76); ctx.lineTo(-10, -58); ctx.moveTo(30, -52); ctx.lineTo(24, -76); ctx.lineTo(10, -58); ctx.fill();
+  ctx.fillStyle = b.est === "cansado" ? "#9aa0d8" : b.inv > 0 ? "#dc77a2" : "#7b58b8"; ctx.beginPath(); ctx.ellipse(0, -30, 38 + w, 32 - w, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#fff"; [-14, 14].forEach(x => { ctx.beginPath(); ctx.arc(x, -34, 9, 0, 7); ctx.fill(); });
+  const o = Math.max(-1, Math.min(1, (p.x - b.x) / 40)) * 3;
+  ctx.fillStyle = "#2a1a44"; [-14, 14].forEach(x => { ctx.beginPath(); ctx.arc(x + o, -33, 4, 0, 7); ctx.fill(); });
+  ctx.strokeStyle = "#2a1a44"; ctx.lineWidth = 4; ctx.beginPath();
+  ctx.moveTo(-26, -50); ctx.lineTo(-6, -44); ctx.moveTo(26, -50); ctx.lineTo(6, -44); ctx.moveTo(-8, -14); ctx.quadraticCurveTo(0, -22, 8, -14); ctx.stroke();
+  ctx.restore();
+}
+ 
+// ---- cenário ----
+function astro(F) {
+  const [x, y, r, c] = F.astro; ctx.fillStyle = c;
+  ctx.globalAlpha = .22 + .06 * Math.sin(t / 40); ctx.beginPath(); ctx.arc(x, y, r * 1.9, 0, 7); ctx.fill();
+  ctx.globalAlpha = .95; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+}
+function camada(L) {
+  const [par, cor, tipo, alt, esp] = L, off = cam * par, b = CHAO + 4;
+  ctx.fillStyle = cor;
+  if (tipo == "onda") {
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 8) ctx.lineTo(x, b - alt + Math.sin((x + off) / 30 + t / 20) * 6);
+    ctx.lineTo(W, H); ctx.fill(); return;
+  }
+  for (let x = -(off % esp) - esp; x < W + esp; x += esp) {
+    const k = Math.floor((x + off) / esp), h = alt * (.6 + Math.abs(Math.sin(k * 12.98 + alt)) * .7);
+    ctx.beginPath();
+    if (tipo == "predio") {
+      ctx.rect(x, b - h, esp * .8, h); ctx.fill(); ctx.fillStyle = "rgba(255,240,170,.6)";
+      for (let j = 8; j < h - 10; j += 16) for (let i = 6; i < esp * .8 - 8; i += 14) if (Math.sin(k * 7 + i * 3 + j * 5) > .1) ctx.fillRect(x + i, b - h + j, 6, 8);
+      ctx.fillStyle = cor;
+    } else if (tipo == "pinheiro") {
+      for (let n = 0; n < 3; n++) { const top = b - h + n * h * .26, hw = esp * (.2 + n * .08); ctx.moveTo(x + esp / 2, top); ctx.lineTo(x + esp / 2 - hw, top + h * .42); ctx.lineTo(x + esp / 2 + hw, top + h * .42); }
+      ctx.fill();
+    } else { ctx.ellipse(x + esp / 2, b, esp * .75, h, 0, Math.PI, 0); ctx.fill(); }
+  }
+}
+function brilhos(F) {
+  ctx.fillStyle = F.luz;
+  luzes.forEach(l => { ctx.globalAlpha = .4 + .5 * Math.sin(t / 20 + l.f); ctx.beginPath(); ctx.arc(l.x + Math.sin(t / 60 + l.f) * 10, l.y, 2.5, 0, 7); ctx.fill(); });
+  ctx.globalAlpha = 1;
+}
+function grama(F) {
+  const b = CHAO + 4; ctx.fillStyle = F.grama; ctx.fillRect(0, b, WORLD, 5);
+  for (let x = Math.floor(cam / 22) * 22; x < cam + W + 22; x += 22) {
+    const r = Math.abs(Math.sin(x * 1.7)), ty = b - 5 - r * 7;
+    ctx.beginPath(); ctx.moveTo(x, b); ctx.lineTo(x + 4, ty); ctx.lineTo(x + 9, b); ctx.fill();
+    if (r > .8) { ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x + 4, ty - 2, 3, 0, 7); ctx.fill(); ctx.fillStyle = F.grama; }
+  }
+}
+ 
+
+function final() {
+  const a = cena < 200 ? cena / 4 : 0;
+  boneco(EU, p.x, CHAO + 4, 1, a); boneco(ELA, elaX, CHAO + 4, -1, a);
+  ctx.globalAlpha = Math.max(0, Math.min(1, (cena - 120) / 60));
+  const d = Math.max(0, Math.ceil((DATA_ENCONTRO - new Date()) / 864e5));
+  texto("Te encontrei 💕", W / 2, 68, 46, "#3b2350");
+  texto(d > 1 ? `Faltam ${d} dias para a gente se ver` : d === 1 ? "Falta 1 dia para a gente se ver" : "Hoje é o dia!", W / 2, 110, 24, "#8a2a5b");
+  texto(TEXTO_FINAL, W / 2, 142, 20, "#3b2350");
+  if (cena > 400) texto("toque para voltar ao menu", W / 2, 168, 16, "#3b2350");
+  ctx.globalAlpha = 1;
+}
+function desenhar() {
+  tr(0);
+  const F = FASES[fase], g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, F.topo); g.addColorStop(1, F.base); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.font = "40px serif"; ctx.textAlign = "center";
+  astro(F);
+  nuvens.forEach(n => ctx.fillText("☁️", n.x, n.y));
+  camada(F.c1); camada(F.c2); brilhos(F);
+  tr(-Math.round(cam));
+  ctx.fillStyle = F.chao; ctx.fillRect(0, CHAO + 4, WORLD, H - CHAO); grama(F);
+  const jogando = est === "jogo" || est === "perdeu";
+  if (jogando) plat.forEach(b => { ctx.fillStyle = F.chao; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, 18, 6); ctx.fill(); ctx.fillStyle = F.grama; ctx.fillRect(b.x, b.y, b.w, 5); });
+  if (est === "menu") {
+    boneco(EU, 240, CHAO + 4, 1, 0); boneco(ELA, 400, CHAO + 4, -1, 0);
+  } else if (jogando) {
+    desenhaCheckpoints();
+    ctx.font = "42px serif"; ctx.textAlign = "center";
+    cor.forEach(c => { if (!c.pego) ctx.fillText("💗", c.x, c.y + 14 + Math.sin(t / 15 + c.x) * 4); });
+    const falta = cor.filter(c => !c.pego).length, ultima = fase === FASES.length - 1;
+    if (!falta && !ultima && !(boss && boss.vida > 0)) { ctx.font = "34px serif"; ctx.fillText("➡️", WORLD - 30, CHAO - 40 + Math.sin(t / 8) * 5); }
+    if (ultima) boneco(ELA, WORLD - 50, CHAO + 4, -1, 0);
+    desenhaMobs();
+    if (boss && boss.vida > 0) { desenhaBoss(); if (boss.est === "aviso") texto("❗", boss.x, boss.y - 92, 30, "#fff"); }
+    boneco(EU, p.x, p.y + 4, p.dir, p.and);
+    if (boss && boss.vida > 0) desenhaGolpe();
+    tr(0);
+    hud(F);
+    if (avisoT > 0) texto(aviso, W / 2, 104, 20, F.boss ? "#fff" : "#8a2a5b");
+    if (banner > 0 && msgT <= 0) { ctx.globalAlpha = Math.min(1, banner / 40); texto(F.nome, W / 2, 190, 42, F.boss ? "#fff" : "#3b2350"); ctx.globalAlpha = 1; }
+    if (msgT > 0) mostrarMsg();
+  } else final();
+  ctx.font = "18px serif"; ctx.textAlign = "center";
+  fx.forEach(f => { ctx.globalAlpha = Math.min(1, f.v / 30); ctx.fillText(f.e, f.x - (est === "fim" ? 0 : cam), f.y); }); ctx.globalAlpha = 1;
+}
+
+// ---- início ----
+if (matchMedia("(pointer:coarse)").matches || "ontouchstart" in window || /[?&]controles=1/.test(location.search)) document.body.classList.add("touch");
+ajustar(); if ("ResizeObserver" in window) new ResizeObserver(ajustar).observe($("stage"));
+irMenu();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+let ult = performance.now(), acc = 0;
+function loop(n) {
+  acc += Math.min(100, n - ult); ult = n;
+  let c = 0; while (acc >= DT && c < 5) { passo(); acc -= DT; c++; } if (c === 5) acc = 0;
+  desenhar(); requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+window.__jogo = { get est() { return est; }, get fase() { return fase; }, get vida() { return p && p.vida; }, get pausado() { return pausado; }, get mobs() { return mobs; }, get p() { return p; }, get cor() { return cor; }, get cps() { return cps; } };
+</script>
+</body></html>
