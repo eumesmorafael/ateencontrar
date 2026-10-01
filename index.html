@@ -20,6 +20,7 @@ body.touch[data-est=jogo]:not([data-pausa]) #ctl{display:block}
 #bL{left:max(14px,env(safe-area-inset-left))}#bR{left:calc(max(14px,env(safe-area-inset-left)) + var(--s) + 12px)}
 #bJ{right:max(14px,env(safe-area-inset-right))}#bA{right:calc(max(14px,env(safe-area-inset-right)) + var(--s) + 12px);background:rgba(160,100,190,.78)}#bA[hidden]{display:none}
 #bD{right:max(14px,env(safe-area-inset-right));bottom:calc(max(22px,env(safe-area-inset-bottom)) + var(--s) + 12px);background:rgba(255,170,70,.8)}
+.cq{display:flex;gap:10px;align-items:center;text-align:left;margin:7px 0;font-size:13px}.cq b{display:block;font-size:15px}.cq.off{opacity:.45}.cq i{font-style:normal;font-size:26px}
 .ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(40,20,60,.72);z-index:6;padding:12px;box-sizing:border-box;overflow:auto}
 .ov.vis{display:flex}#menu{background:rgba(40,20,60,.45)}
 .card{background:linear-gradient(#fff6fa,#ffd9e8);color:#3b2350;border-radius:22px;padding:20px 22px;width:min(340px,100%);max-height:100%;overflow:auto;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4)}
@@ -33,7 +34,9 @@ body.touch[data-est=jogo]:not([data-pausa]) #ctl{display:block}
 <button class="ic" id="pause" aria-label="Pausar">Ⅱ</button><button class="ic" id="som" aria-label="Ligar ou desligar o som">🔊</button></div>
 <div id="ctl"><button class="b" id="bL" aria-label="Mover para a esquerda">◀</button><button class="b" id="bR" aria-label="Mover para a direita">▶</button><button class="b" id="bJ" aria-label="Pular">▲</button><button class="b" id="bD" aria-label="Impulso">⚡</button><button class="b" id="bA" aria-label="Atacar com espada" hidden>⚔️</button></div>
 <div class="ov vis" id="menu"><div class="card"><h1>Até te encontrar</h1><p id="sub"></p><p id="rec"></p><div class="bts">
-<button class="mb pri" id="mCont">Continuar</button><button class="mb" id="mComecar">Começar jogo</button><button class="mb" id="mNovo">Novo jogo</button><button class="mb" id="mSom">🔊 Som: ligado</button><button class="mb peq" id="mApagar">Apagar progresso</button></div></div></div>
+<button class="mb pri" id="mCont">Continuar</button><button class="mb" id="mComecar">Começar jogo</button><button class="mb" id="mNovo">Novo jogo</button><button class="mb" id="mFases">Escolher fase</button><button class="mb" id="mConq">🏆 Conquistas</button><button class="mb" id="mSom">🔊 Som: ligado</button><button class="mb peq" id="mApagar">Apagar progresso</button></div></div></div>
+<div class="ov" id="conq"><div class="card"><h2>🏆 Conquistas</h2><p id="cqRes"></p><div id="cqLista"></div><div class="bts"><button class="mb pri" id="cqFechar">Voltar</button><button class="mb peq" id="cqApagar">Apagar conquistas</button></div></div></div>
+<div class="ov" id="fases"><div class="card"><h2>Escolher fase</h2><div class="bts" id="fLista"></div><div class="bts" style="margin-top:9px"><button class="mb pri" id="fVoltar">Voltar</button></div></div></div>
 <div class="ov" id="pausa"><div class="card"><h2>Jogo pausado</h2><div class="bts"><button class="mb pri" id="pCont">Continuar</button><button class="mb" id="pReiniciar">Reiniciar fase</button><button class="mb" id="pMenu">Voltar ao menu</button></div></div></div>
 <div class="ov" id="derrota"><div class="card"><h2>Você caiu... 💔</h2><p id="dInfo"></p><div class="bts"><button class="mb pri" id="dTentar">Tentar novamente</button><button class="mb" id="dReiniciar">Reiniciar fase</button><button class="mb" id="dMenu">Voltar ao menu</button></div></div></div>
 <div class="ov" id="confirma"><div class="card"><h2>Tem certeza?</h2><p id="cTxt"></p><div class="bts"><button class="mb pri" id="cSim">Sim, apagar</button><button class="mb" id="cNao">Cancelar</button></div></div></div>
@@ -72,6 +75,7 @@ const FASES = [
 ];
 
 // mobs voadores extras (morcegos): [x, altura, velocidade, min, max]
+FASES[0].voa = [[1000, 120, 1.2, 880, 1120]];
 FASES[1].voa = [[1250, 120, 1.1, 1130, 1380]];
 FASES[2].voa = [[800, 110, 1.2, 700, 950], [1700, 120, 1.3, 1600, 1850]];
 FASES[4].voa = [[700, 120, 1.4, 600, 820], [1600, 130, 1.5, 1500, 1750], [2350, 120, 1.5, 2250, 2500]];
@@ -119,7 +123,39 @@ function salvarProgresso(indice) {
   s.melhor.coracoes = Math.max(s.melhor.coracoes, total);
   gravar(K_SAVE, s);
 }
-function apagarProgresso() { try { localStorage.removeItem(K_SAVE); localStorage.removeItem(K_PROG); } catch (e) {} }
+const K_CONQ = "ate-te-encontrar-conquistas-v1";
+const CONQ = {
+  primeira: ["🗡️", "Primeira vítima", "Derrote um inimigo"], espada: ["⚔️", "Espadachim", "Derrote 5 inimigos com a espada na mesma partida"],
+  combo: ["🔥", "Combo x3", "Derrote 3 inimigos em sequência"], impulso: ["⚡", "Raio de amor", "Derrote um inimigo com o impulso"],
+  morcego: ["🦇", "Caçador de morcegos", "Derrote um morcego"], bandeira: ["🚩", "Marcando território", "Ative um checkpoint"],
+  colecionador: ["💗", "Colecionador", "Pegue 20 corações na mesma partida"], intocavel: ["🛡️", "Intocável", "Termine uma fase sem levar dano"],
+  chefe: ["👑", "Domador da distância", "Derrote o chefe"], fim: ["💕", "Até te encontrar", "Zere o jogo"], semmorrer: ["🌟", "Sem chorar", "Zere o jogo sem cair nenhuma vez (começando em Começar jogo)"],
+  exterminador: ["💀", "Exterminador", "Derrote 50 inimigos no total"], lenda_espada: ["🗡️", "Lenda da espada", "Derrote 30 inimigos com a espada no total"],
+  combo5: ["🌋", "Combo x5", "Derrote 5 inimigos em sequência"], coracoes100: ["😍", "Apaixonado", "Pegue 100 corações no total"],
+  chefeperfeito: ["🏅", "Chefe sem um arranhão", "Derrote o chefe sem levar dano"], perfeito: ["✨", "Perfeito", "Zere o jogo sem levar nenhum dano"],
+  velocista: ["⏱️", "Velocista", "Zere o jogo em menos de 7 minutos"], mola: ["🦘", "Mola", "Pule 200 vezes no total"],
+  corredor: ["💨", "Corredor", "Use o impulso 50 vezes no total"], persistente: ["💪", "Persistente", "Caia 10 vezes (quem desiste não chega)"],
+  amorverdade: ["💞", "Amor de verdade", "Zere o jogo 3 vezes"], pacifista: ["🕊️", "Pacifista", "Zere o jogo sem usar a espada fora do chefe"],
+  semimpulso: ["🥾", "No pé", "Zere o jogo sem usar o impulso"], platina: ["💎", "PLATINA", "Desbloqueie todas as outras conquistas"]
+};
+const K_STATS = "ate-te-encontrar-stats-v1";
+const novoStats = () => ({ mortos: 0, espada: 0, coracoes: 0, pulos: 0, impulsos: 0, quedas: 0, finais: 0 });
+const PROG = { exterminador: ["mortos", 50], lenda_espada: ["espada", 30], coracoes100: ["coracoes", 100], mola: ["pulos", 200], corredor: ["impulsos", 50], persistente: ["quedas", 10], amorverdade: ["finais", 3] };
+let stats = Object.assign(novoStats(), ler(K_STATS));
+const novoSt = ini => ({ espada: 0, mortes: 0, f: 0, dano: false, usouEspada: false, usouImpulso: false, ini });
+function cont(k) { stats[k]++; gravar(K_STATS, stats); Object.keys(PROG).forEach(id => { if (stats[PROG[id][0]] >= PROG[id][1]) desbloquear(id); }); }
+let conq = ler(K_CONQ) || {}, st = novoSt(0), danoFase = false, toast = null; const fila = [];
+function desbloquear(id) {
+  if (conq[id] || !CONQ[id]) return;
+  conq[id] = 1; gravar(K_CONQ, conq); fila.push({ t: CONQ[id][0] + " " + CONQ[id][1], v: 200 }); tocar("vitoria", id === "platina" ? .8 : .4); vibrar([30, 40, 30]);
+  if (id === "platina") { for (let i = 0; i < 4; i++) estourar(cam + W / 2 + i * 40 - 60, 140); fila[fila.length - 1].t = "💎 PLATINA! Você conquistou tudo!"; fila[fila.length - 1].v = 320; }
+  else if (Object.keys(CONQ).filter(k => k !== "platina").every(k => conq[k])) desbloquear("platina");
+}
+function listarConq() {
+  const ids = Object.keys(CONQ), n = ids.filter(i => conq[i]).length; $("cqRes").textContent = `${n} de ${ids.length} desbloqueadas`;
+  $("cqLista").innerHTML = ids.map(i => `<div class="cq${conq[i] ? "" : " off"}"><i>${conq[i] ? CONQ[i][0] : "🔒"}</i><span><b>${CONQ[i][1]}</b>${CONQ[i][2]}${!conq[i] && PROG[i] ? ` (${Math.min(stats[PROG[i][0]], PROG[i][1])}/${PROG[i][1]})` : ""}</span></div>`).join("");
+}
+function apagarProgresso() {  try { localStorage.removeItem(K_SAVE); localStorage.removeItem(K_PROG); } catch (e) {} }
 
 // ---- áudio (arquivos locais em assets/audio; o jogo funciona sem som) ----
 let ac = null; const bufs = {};
@@ -158,26 +194,32 @@ function alternarSom() { cfg.som = !cfg.som; gravar(K_CFG, cfg); iniciarAudio();
 
 // ---- telas ----
 function mostrar(id, on) { const el = $(id); el.classList.toggle("vis", on); if (on) { const b = el.querySelector(".mb:not([hidden])"); if (b) b.focus({ preventScroll: true }); } }
-function esconderTudo() { ["menu", "pausa", "derrota", "confirma"].forEach(i => mostrar(i, false)); }
+function esconderTudo() { ["menu", "pausa", "derrota", "confirma", "conq", "fases"].forEach(i => mostrar(i, false)); }
 function setPausa(on) { pausado = on; if (on) document.body.dataset.pausa = "1"; else delete document.body.dataset.pausa; mostrar("pausa", on); soltarTudo(); }
 function irMenu() {
   esconderTudo(); setPausa(false); setEst("menu"); carregar(0); atualizarMenu(); mostrar("menu", true);
 }
 function atualizarMenu() {
   const s = lerProgresso(), tem = s.desbloqueada > 0 || s.melhor.fase > 0 || s.melhor.coracoes > 0 || s.finais > 0;
-  $("sub").textContent = "um jogo para você, " + NOME;
+  $("sub").textContent = "um jogo para você, " + NOME + (conq.platina ? " · 💎 Platina" : "");
+  $("mFases").hidden = s.desbloqueada < 1; $("mConq").textContent = `🏆 Conquistas (${Object.keys(CONQ).filter(k => conq[k]).length}/${Object.keys(CONQ).length})`;
   $("mCont").hidden = !tem; $("mNovo").hidden = !tem; $("mApagar").hidden = !tem;
   $("mCont").textContent = `Continuar · Fase ${s.desbloqueada + 1}`;
   $("rec").textContent = tem ? `Melhor progresso: fase ${s.melhor.fase + 1} de ${FASES.length} · ${s.melhor.coracoes} 💗` : "";
   atualizarSom();
 }
-function iniciar(i) { iniciarAudio(); esconderTudo(); setPausa(false); total = 0; setEst("jogo"); carregar(i); }
+function iniciar(i) { st = novoSt(i); iniciarAudio(); esconderTudo(); setPausa(false); total = 0; setEst("jogo"); carregar(i); }
 function perguntar(txt, acao) { $("cTxt").textContent = txt; $("cSim").onclick = () => { mostrar("confirma", false); acao(); }; mostrar("confirma", true); }
 $("mCont").onclick = () => iniciar(lerProgresso().desbloqueada);
 $("mComecar").onclick = () => iniciar(0);
 $("mNovo").onclick = () => perguntar("Isso apaga todo o seu progresso e começa um jogo novo.", () => { apagarProgresso(); iniciar(0); });
 $("mApagar").onclick = () => perguntar("Isso apaga a fase desbloqueada e o melhor progresso salvos neste aparelho.", () => { apagarProgresso(); irMenu(); });
 $("cNao").onclick = () => mostrar("confirma", false) || mostrar("menu", true);
+$("mConq").onclick = () => { listarConq(); mostrar("menu", false); mostrar("conq", true); };
+$("cqApagar").onclick = () => perguntar("Isso apaga todas as conquistas e contadores.", () => { conq = {}; stats = novoStats(); gravar(K_CONQ, conq); gravar(K_STATS, stats); listarConq(); });
+$("mFases").onclick = () => { const s = lerProgresso(); $("fLista").innerHTML = ""; FASES.forEach((F, i) => { if (i > s.desbloqueada) return; const b = document.createElement("button"); b.className = "mb"; b.textContent = `Fase ${i + 1} · ${F.nome}`; b.onclick = () => iniciar(i); $("fLista").appendChild(b); }); mostrar("menu", false); mostrar("fases", true); };
+$("fVoltar").onclick = () => { mostrar("fases", false); mostrar("menu", true); };
+$("cqFechar").onclick = () => { mostrar("conq", false); mostrar("menu", true); };
 $("mSom").onclick = $("som").onclick = alternarSom;
 $("pause").onclick = () => { if (est === "jogo") setPausa(!pausado); };
 $("pCont").onclick = () => setPausa(false);
@@ -219,7 +261,7 @@ cv.addEventListener("pointerdown", () => { iniciarAudio(); if (est === "fim" && 
 document.oncontextmenu = e => e.preventDefault();
 
 // ---- fases ----
-function novoBoss() { return { x: 420, y: CHAO + 4, vx: 1.6, vida: 3, inv: 0, est: "anda", tm: 110, dir: -1 }; }
+function novoBoss() { return { x: 420, y: CHAO + 4, vx: 1.6, vida: 5, inv: 0, est: "anda", tm: 85, dir: -1 }; }
 function carregar(indice) {
   fase = indice;
   const F = FASES[fase];
@@ -227,19 +269,22 @@ function carregar(indice) {
   plat = F.p.map(([x, altura, largura]) => ({ x, y: CHAO - altura, w: largura }));
   cor = F.pos.map(([x, altura], i) => ({ ...F.cor[i], x, y: CHAO - altura, pego: false }));
   // tipo 0 = gosma (patrulha) | tipo 1 = rosinha (patrulha e investe quando você chega perto) | tipo 2 = morcego (voa em onda)
-  mobs = (F.mobs || []).map(([x, vx, min, max], i) => ({ x, y: CHAO + 4, vx, v0: vx, min, max, tipo: i % 2, w: 50, h: 44, vivo: true, anim: i, est: 0, tm: 40 }));
+  mobs = (F.mobs || []).map(([x, vx, min, max], i) => ({ x, y: CHAO + 4, vx: vx * 1.25, v0: vx * 1.25, min, max, tipo: i % 2, w: 50, h: 44, vivo: true, anim: i, est: 0, tm: 40 }));
   (F.voa || []).forEach(([x, alt, vx, min, max], i) => mobs.push({ x, y: CHAO - alt, y0: CHAO - alt, vx, v0: vx, min, max, tipo: 2, w: 46, h: 34, vivo: true, anim: i + 3, est: 0, tm: 0 }));
-  cps = F.boss ? [] : [.34, .67].map(f => ({ x: Math.round(F.w * f), on: false }));
+  if (!F.boss) [.22, .52, .83].forEach((f, i) => { const x = Math.round(F.w * f), v = 1.3 + fase * .12; mobs.push({ x, y: CHAO + 4, vx: v, v0: v, min: x - 90, max: x + 90, tipo: (i + fase) % 2, w: 50, h: 44, vivo: true, anim: i + 7, est: 0, tm: 40 }); });
+  danoFase = false;
+  cps = F.boss ? [] : [.5].map(f => ({ x: Math.round(F.w * f), on: false }));
   ck = { x: 24 };
   p = { x: 24, y: CHAO, vx: 0, vy: 0, no: true, dir: 1, and: 0, saltos: 0, coy: 0, buf: 0, vida: 3, inv: 0, ataque: 0, esperaAtaque: 0, dash: 0, dashCd: 0 };
   boss = F.boss ? novoBoss() : null;
-  $("bA").hidden = !F.boss;
+  $("bA").hidden = false;
   cam = 0; banner = 90; msgT = 0; msg = null; fotoEl = null; aviso = ""; avisoT = 0;
   nuvens = Array.from({ length: 5 }, (_, i) => ({ x: i * 155 + 25, y: 35 + (i % 3) * 32, v: .15 + (i % 2) * .1 }));
   luzes = Array.from({ length: 24 }, (_, i) => ({ x: (i * 83) % W, y: (i * 47) % H, v: .15 + (i % 5) * .04, f: i }));
   soltarTudo();
 }
 function derrota() {
+  st.mortes++; cont("quedas");
   setEst("perdeu"); cena = 0; soltarTudo(); vibrar([70, 50, 70]);
   $("dInfo").textContent = `Fase ${fase + 1}: ${FASES[fase].nome}` + (ck.x > 24 ? " · checkpoint guardado 🚩" : "");
   mostrar("derrota", true);
@@ -263,7 +308,7 @@ function midia(c) {
 
 // ---- lógica (passo fixo de 1/60 s) ----
 function passo() {
-  t++; if (shk > 0) shk--; if (fade > 0) fade--; if (comboT > 0 && --comboT === 0) combo = 0;
+  t++; if (shk > 0) shk--; if (toast && --toast.v <= 0) toast = null; if (!toast && fila.length) toast = fila.shift(); if (fade > 0) fade--; if (comboT > 0 && --comboT === 0) combo = 0;
   nuvens.forEach(n => { n.x += n.v; if (n.x > W + 60) n.x = -60; });
   luzes.forEach(l => { l.y += l.v * FASES[fase].mov; if (l.y > H) l.y = -5; if (l.y < -5) l.y = H; });
   fx.forEach(f => { f.x += f.vx; f.y += f.vy; f.vy += f.g; f.v--; }); fx = fx.filter(f => f.v > 0);
@@ -276,11 +321,11 @@ function passo() {
     return;
   }
   if (pausado) return;
-  if (banner > 0) banner--; if (p.inv > 0) p.inv--; if (p.esperaAtaque > 0) p.esperaAtaque--; if (avisoT > 0) avisoT--;
-  if (prs.A && boss && p.esperaAtaque === 0) { p.ataque = 16; p.ataqueAcertou = false; p.esperaAtaque = 28; tocar("ataque"); }
+  if (banner > 0) banner--; if (p.inv > 0) p.inv--; if (p.esperaAtaque > 0) p.esperaAtaque--; st.f++; if (avisoT > 0) avisoT--;
+  if (prs.A && p.esperaAtaque === 0) { p.ataque = 16; p.ataqueAcertou = false; if (!boss) st.usouEspada = true; p.esperaAtaque = 28; tocar("ataque"); }
   if (p.ataque > 0) p.ataque--;
   if (p.dashCd > 0) p.dashCd--;
-  if (prs.D && p.dashCd === 0) { p.dash = 14; p.dashCd = 55; p.dir = (held.R - held.L) || p.dir; p.inv = Math.max(p.inv, 14); tocar("ataque", .4); shk = 3; }
+  if (prs.D && p.dashCd === 0) { p.dash = 14; p.dashCd = 55; st.usouImpulso = true; cont("impulsos"); p.dir = (held.R - held.L) || p.dir; p.inv = Math.max(p.inv, 14); tocar("ataque", .4); shk = 3; }
   if (p.no && Math.abs(p.vx) > 2.2 && t % 7 === 0) poeira(p.x - p.dir * 10, p.y + 4);
   // movimento com aceleração e desaceleração
   const mv = held.R - held.L;
@@ -292,7 +337,7 @@ function passo() {
   if (prs.J) p.buf = 7; else if (p.buf > 0) p.buf--;
   if (p.buf > 0 && (p.coy > 0 || p.saltos < 2)) {
     p.vy = p.saltos === 0 ? -11.5 : -10; p.saltos++;
-    p.no = false; p.buf = 0; p.coy = 0; tocar("pulo", .35); poeira(p.x, p.y + 4);
+    p.no = false; p.buf = 0; p.coy = 0; cont("pulos"); tocar("pulo", .35); poeira(p.x, p.y + 4);
   }
   if (!held.J && p.vy < -5) p.vy = -5;
   // gravidade e chão/plataformas (só pousa por cima)
@@ -302,12 +347,13 @@ function passo() {
   const pousou = !p.no && p.y >= solo && p.vy > 4;
   p.no = p.y >= solo; if (p.no) { p.y = solo; p.vy = 0; p.saltos = 0; if (pousou) poeira(p.x, p.y + 4); }
   mobs.forEach(m => moverMob(m));
+  golpeMobs();
   colidirMobs(pes0 + 4);
   cam += (clamp(p.x - W / 2, 0, Math.max(0, WORLD - W)) - cam) * .12;
-  cps.forEach(c => { if (!c.on && p.x > c.x) { c.on = true; ck = { x: c.x }; aviso = "Checkpoint! 🚩"; avisoT = 100; tocar("coracao", .3); } });
+  cps.forEach(c => { if (!c.on && p.x > c.x) { c.on = true; desbloquear("bandeira"); ck = { x: c.x }; aviso = "Checkpoint! 🚩"; avisoT = 100; tocar("coracao", .3); } });
   cor.forEach(c => {
     if (!c.pego && Math.hypot(p.x - c.x, p.y - 26 - c.y) < 38) {
-      c.pego = 1; total++; if (total % 8 === 0 && p.vida < 3) { p.vida++; fx.push({ x: p.x, y: p.y - 90, vx: 0, vy: -.8, g: 0, v: 55, e: "+1 ❤️" }); }
+      c.pego = 1; total++; cont("coracoes"); if (total >= 20) desbloquear("colecionador"); if (total % 8 === 0 && p.vida < 3) { p.vida++; fx.push({ x: p.x, y: p.y - 90, vx: 0, vy: -.8, g: 0, v: 55, e: "+1 ❤️" }); }
       fx.push({ x: c.x, y: c.y - 10, vx: 0, vy: -1.1, g: 0, v: 45, e: "+1 💗" }); msg = c; msgT = (c.foto || c.audio) ? 420 : 300; tocar("coracao"); vibrar(18); estourar(c.x, c.y); midia(c);
     }
   });
@@ -316,10 +362,11 @@ function passo() {
   ["L", "R", "J", "A", "D"].forEach(k => prs[k] = 0);
   if (est !== "jogo") return;
   if (cor.every(c => c.pego) && !(boss && boss.vida > 0) && p.x > WORLD - 40) {
-    if (fase < FASES.length - 1) { salvarProgresso(fase + 1); carregar(fase + 1); fade = 50; tocar("vitoria", .5); }
+    if (fase < FASES.length - 1) { if (!danoFase) desbloquear("intocavel"); salvarProgresso(fase + 1); carregar(fase + 1); fade = 50; tocar("vitoria", .5); }
     else {
       const s = lerProgresso(); s.finais++; s.melhor.fase = FASES.length - 1; s.melhor.coracoes = Math.max(s.melhor.coracoes, total); gravar(K_SAVE, s);
-      setEst("fim"); cena = 0; cam = 0; p.x = 120; p.y = CHAO; elaX = 520; tocar("vitoria");
+      desbloquear("fim"); cont("finais");
+      if (st.ini === 0) { if (!st.mortes) desbloquear("semmorrer"); if (!st.dano) desbloquear("perfeito"); if (st.f < 25200) desbloquear("velocista"); if (!st.usouEspada) desbloquear("pacifista"); if (!st.usouImpulso) desbloquear("semimpulso"); } setEst("fim"); cena = 0; cam = 0; p.x = 120; p.y = CHAO; elaX = 520; tocar("vitoria");
     }
   }
 }
@@ -327,18 +374,36 @@ function moverMob(m) {
   if (!m.vivo) return;
   if (m.tipo === 1) {
     m.tm--;
-    if (m.est === 0) { m.x += m.vx; if (m.tm <= 0 && Math.abs(p.x - m.x) < 170 && Math.abs(p.y + 4 - m.y) < 50) { m.est = 1; m.tm = 32; } }
+    if (m.est === 0) { m.x += m.vx; if (m.tm <= 0 && Math.abs(p.x - m.x) < 220 && Math.abs(p.y + 4 - m.y) < 50) { m.est = 1; m.tm = 32; } }
     else if (m.est === 1) { if (m.tm <= 0) { m.est = 2; m.tm = 34; m.dir = Math.sign(p.x - m.x) || 1; } }
-    else { m.x += m.dir * Math.abs(m.v0) * 3; if (m.tm <= 0) { m.est = 0; m.tm = 110; } }
+    else { m.x += m.dir * Math.abs(m.v0) * 3.6; if (m.tm <= 0) { m.est = 0; m.tm = 110; } }
   } else m.x += m.vx;
   if (m.tipo === 2) m.y = m.y0 + Math.sin(t / 20 + m.anim) * 26;
   if (m.x < m.min) { m.x = m.min; m.vx = Math.abs(m.vx); }
   if (m.x > m.max) { m.x = m.max; m.vx = -Math.abs(m.vx); }
 }
 function dano(msgTxt) {
-  p.vida--; shk = 14; p.inv = 90; p.vy = -7; p.no = false; tocar("dano"); vibrar([35, 35, 35]);
+  p.vida--; shk = 14; danoFase = true; st.dano = true; p.inv = 60; p.vy = -7; p.no = false; tocar("dano"); vibrar([35, 35, 35]);
   msg = { msg: p.vida > 0 ? msgTxt : "Calma, amor, respira e tenta de novo." }; fotoEl = null; msgT = 110;
   if (p.vida <= 0) derrota();
+}
+function matar(m, how) {
+  cont("mortos"); if (how === "espada") cont("espada");
+  m.vivo = false; shk = 6; estourar(m.x, m.y - m.h); tocar("mob"); vibrar(24);
+  if (how === "pulo") { p.vy = -8; p.saltos = 1; }
+  combo++; comboT = 150;
+  if (combo > 1) fx.push({ x: m.x, y: m.y - 70, vx: 0, vy: -.8, g: 0, v: 55, e: "COMBO x" + combo + "!" });
+  if (combo === 3 && p.vida < 3) { p.vida++; fx.push({ x: p.x, y: p.y - 90, vx: 0, vy: -.8, g: 0, v: 55, e: "+1 ❤️" }); tocar("coracao", .5); }
+  desbloquear("primeira"); if (combo >= 3) desbloquear("combo"); if (combo >= 5) desbloquear("combo5"); if (how === "impulso") desbloquear("impulso"); if (m.tipo === 2) desbloquear("morcego");
+  if (how === "espada" && ++st.espada >= 5) desbloquear("espada");
+}
+function golpeMobs() {
+  if (p.ataque <= 0) return;
+  for (const m of mobs) {
+    if (!m.vivo) continue;
+    const dx = (m.x - p.x) * p.dir;
+    if (dx > -14 && dx < 78 && Math.abs((p.y - 24) - (m.y - m.h / 2)) < 46) matar(m, "espada");
+  }
 }
 function colidirMobs(pesAntes) {
   const pf = p.y + 4;
@@ -347,12 +412,7 @@ function colidirMobs(pesAntes) {
     const topo = m.y - m.h;
     if (Math.abs(p.x - m.x) < 12 + m.w / 2 - 6 && pf - 52 < m.y && pf > topo) {
       // só mata se estiver CAINDO e vindo de cima; encostar de lado/no chão causa dano
-      if (p.dash > 0 || (p.vy > 0 && pesAntes <= topo + 12)) {
-        m.vivo = false; shk = 6; if (!p.dash) { p.vy = -8; p.saltos = 1; } estourar(m.x, topo); tocar("mob"); vibrar(24);
-        combo++; comboT = 150;
-        if (combo > 1) fx.push({ x: m.x, y: m.y - 70, vx: 0, vy: -.8, g: 0, v: 55, e: "COMBO x" + combo + "!" });
-        if (combo === 3 && p.vida < 3) { p.vida++; fx.push({ x: p.x, y: p.y - 90, vx: 0, vy: -.8, g: 0, v: 55, e: "+1 ❤️" }); tocar("coracao", .5); }
-      }
+      if (p.dash > 0 || (p.vy > 0 && pesAntes <= topo + 12)) matar(m, p.dash > 0 ? "impulso" : "pulo");
       else if (p.inv === 0) { p.x = clamp(p.x - Math.sign(m.x - p.x || p.dir) * 28, 20, WORLD - 20); p.vx = 0; dano("Ai! Pula em cima deles, amor!"); }
     }
   }
@@ -362,15 +422,16 @@ function colidirMobs(pesAntes) {
 function bossAtualizar() {
   const b = boss; if (!b || b.vida <= 0 || est !== "jogo") return;
   if (b.inv > 0) b.inv--; b.tm--;
-  const dx = b.x - p.x, vel = b.vida <= 1 ? 5.8 : 5.2;
-  if (b.est === "anda") { b.x += b.vx; if (b.x < 260 || b.x > 580) b.vx *= -1; if (b.tm <= 0) { b.est = "aviso"; b.tm = 50; tocar("chefe"); } }
+  const dx = b.x - p.x, vel = b.vida <= 2 ? 7 : 6.2;
+  if (b.est === "anda") { b.x += b.vx; if (b.x < 260 || b.x > 580) b.vx *= -1; if (b.tm <= 0) { b.est = "aviso"; b.tm = 40; tocar("chefe"); } }
   else if (b.est === "aviso") { b.dir = Math.sign(p.x - b.x) || 1; if (b.tm <= 0) { b.est = "investe"; b.tm = 60; } }
   else if (b.est === "investe") { b.x += b.dir * vel; if (b.x < 70 || b.x > 590 || b.tm <= 0) { b.x = clamp(b.x, 70, 590); b.est = "cansado"; b.tm = 90; } }
-  else if (b.tm <= 0) { b.est = "anda"; b.tm = 110; b.vx = b.x > 420 ? -1.6 : 1.6; }
+  else if (b.tm <= 0) { b.est = "anda"; b.tm = 85; b.vx = b.x > 420 ? -1.6 : 1.6; }
   if (p.ataque > 0 && !p.ataqueAcertou && b.inv === 0 && Math.abs(dx) < 88 && Math.abs(p.y - b.y) < 110 && dx * p.dir > -12) {
     b.vida--; shk = 12; b.inv = 55; p.ataqueAcertou = true; p.vy = -5; b.est = "anda"; b.tm = 100; b.vx = dx >= 0 ? 1.8 : -1.8;
     estourar(b.x, b.y - 40); tocar("mob");
     if (b.vida === 0) {
+      desbloquear("chefe"); if (!danoFase) desbloquear("chefeperfeito");
       for (let i = 0; i < 4; i++) estourar(b.x + i * 12 - 18, b.y - 30);
       msg = { msg: "Você venceu a distância! Agora vem cá me abraçar 💕" }; fotoEl = null; msgT = 260; tocar("vitoria");
     }
@@ -579,7 +640,7 @@ function desenhar() {
     desenhaMobs();
     if (boss && boss.vida > 0) { desenhaBoss(); if (boss.est === "aviso") texto("❗", boss.x, boss.y - 92, 30, "#fff"); }
     boneco(EU, p.x, p.y + 4, p.dir, p.and);
-    if (boss && boss.vida > 0) desenhaGolpe();
+    desenhaGolpe();
     tr(0);
     hud(F);
     if (avisoT > 0) texto(aviso, W / 2, 104, 20, F.boss ? "#fff" : "#8a2a5b");
@@ -588,6 +649,7 @@ function desenhar() {
   } else final();
   ctx.font = "18px serif"; ctx.textAlign = "center";
   fx.forEach(f => { ctx.globalAlpha = Math.min(1, f.v / 30); ctx.fillText(f.e, f.x - (est === "fim" ? 0 : cam), f.y); }); ctx.globalAlpha = 1;
+  if (toast) { tr(0); const a = Math.max(0, Math.min(1, toast.v / 20, (200 - toast.v) / 12)); ctx.globalAlpha = a; ctx.fillStyle = "rgba(59,35,80,.92)"; ctx.beginPath(); ctx.roundRect(W / 2 - 160, H - 60, 320, 44, 12); ctx.fill(); texto("🏆 Conquista: " + toast.t, W / 2, H - 32, 16, "#fff"); ctx.globalAlpha = 1; }
   if (est === "jogo") { const v = ctx.createRadialGradient(W / 2, H / 2, H * .45, W / 2, H / 2, H * 1.05); v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(30,0,50,.35)"); tr(0); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H); }
   if (fade > 0 && est === "jogo") { tr(0); const a = fade / 50; ctx.fillStyle = `rgba(255,214,232,${a * .85})`; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = a; texto("Fase completa! 💕", W / 2, 180, 40, "#8a2a5b"); ctx.globalAlpha = 1; }
 }

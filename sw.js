@@ -1,5 +1,5 @@
 // Mude VERSAO a cada publicação para que os aparelhos baixem os arquivos novos.
-const VERSAO = "2.3.0";
+const VERSAO = "2.5.0";
 const CACHE = "ate-te-encontrar-" + VERSAO;
 const ARQUIVOS = [
   "./", "./index.html", "./manifest.webmanifest",
